@@ -1,0 +1,788 @@
+<title>The Concepts Behind Your Five Projects</title>
+<style>
+  :root {
+    --paper: #ECEEEC;
+    --card: #F8F9F7;
+    --card-border: #D8DDDA;
+    --ink: #1B2226;
+    --ink-2: #4B565C;
+    --muted: #8A9297;
+    --rule: #D3D8D5;
+    --accent-text: #8F5A14;
+    --accent-soft: #F1E3CC;
+    --chart-amber: #B8791E;
+    --chart-blue: #1F6FA6;
+    --chart-plum: #8A3F7A;
+    --chart-gain: #2F8F5B;
+    --chart-loss: #C1402E;
+    --chart-grid: #D3D8D5;
+    --shadow: 0 1px 2px rgba(27,34,38,0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #14181B; --card: #1D2226; --card-border: #2B3237;
+      --ink: #ECEDE9; --ink-2: #B7C0C4; --muted: #7C8A90; --rule: #2B3237;
+      --accent-text: #E3AE5E; --accent-soft: #3A2C15;
+      --chart-amber: #BC8434; --chart-blue: #4B8EC4; --chart-plum: #A5619E;
+      --chart-gain: #3EA070; --chart-loss: #E06A54; --chart-grid: #2B3237;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #14181B; --card: #1D2226; --card-border: #2B3237;
+    --ink: #ECEDE9; --ink-2: #B7C0C4; --muted: #7C8A90; --rule: #2B3237;
+    --accent-text: #E3AE5E; --accent-soft: #3A2C15;
+    --chart-amber: #BC8434; --chart-blue: #4B8EC4; --chart-plum: #A5619E;
+    --chart-gain: #3EA070; --chart-loss: #E06A54; --chart-grid: #2B3237;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  :root[data-theme="light"] {
+    --paper: #ECEEEC; --card: #F8F9F7; --card-border: #D8DDDA;
+    --ink: #1B2226; --ink-2: #4B565C; --muted: #8A9297; --rule: #D3D8D5;
+    --accent-text: #8F5A14; --accent-soft: #F1E3CC;
+    --chart-amber: #B8791E; --chart-blue: #1F6FA6; --chart-plum: #8A3F7A;
+    --chart-gain: #2F8F5B; --chart-loss: #C1402E; --chart-grid: #D3D8D5;
+    --shadow: 0 1px 2px rgba(27,34,38,0.06);
+  }
+
+  * { box-sizing: border-box; }
+  body { background: var(--paper); }
+
+  .doc {
+    --font-display: "Iowan Old Style", "Sitka Text", "Noto Serif", Georgia, serif;
+    --font-body: Optima, Candara, "Noto Sans", "Segoe UI", sans-serif;
+    --font-mono: "SF Mono", Menlo, Consolas, "Roboto Mono", monospace;
+    font-family: var(--font-body);
+    color: var(--ink);
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 5rem;
+    line-height: 1.5;
+  }
+  a { color: var(--accent-text); }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.9rem;
+  }
+  .cover h1 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(1.9rem, 3.6vw, 2.7rem);
+    line-height: 1.15;
+    margin: 0 0 0.9rem;
+    max-width: 20ch;
+    text-wrap: balance;
+  }
+  .dek {
+    font-size: 1.05rem;
+    color: var(--ink-2);
+    max-width: 62ch;
+    margin: 0 0 1.6rem;
+  }
+  .howto {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-left: 3px solid var(--accent-text);
+    border-radius: 4px;
+    padding: 0.9rem 1.1rem;
+    max-width: 68ch;
+    font-size: 0.92rem;
+    color: var(--ink-2);
+    margin: 0 0 2.6rem;
+  }
+  .howto b { color: var(--ink); }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 216px minmax(0,1fr);
+    gap: 3rem;
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+    .toc { position: static !important; }
+  }
+
+  .toc { position: sticky; top: 2rem; }
+  .toc-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.6rem;
+  }
+  .toc ol { list-style: none; margin: 0 0 1.8rem; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+  .toc a {
+    text-decoration: none;
+    color: var(--ink-2);
+    font-size: 0.9rem;
+    display: block;
+    padding: 0.15rem 0;
+    border-left: 2px solid transparent;
+    padding-left: 0.7rem;
+  }
+  .toc a:hover { color: var(--ink); border-left-color: var(--accent-text); }
+  .toc-map { border-top: 1px solid var(--rule); padding-top: 1rem; }
+  .toc-map ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.55rem; }
+  .toc-map li { font-size: 0.78rem; color: var(--muted); line-height: 1.4; }
+  .toc-map .proj { color: var(--ink-2); font-family: var(--font-mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.03em; display: block; }
+
+  section.chapter { margin-bottom: 3.2rem; scroll-margin-top: 1.5rem; }
+  .chapter h2 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 1.55rem;
+    margin: 0 0 0.35rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+  }
+  .chapter h2 .num { font-family: var(--font-mono); color: var(--accent-text); font-size: 1.1rem; }
+  .chapter .section-note {
+    color: var(--muted);
+    font-size: 0.92rem;
+    margin: 0 0 1.6rem;
+    max-width: 62ch;
+    padding-bottom: 1.4rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .entry { padding: 1.3rem 0; border-top: 1px solid var(--rule); }
+  .entry:first-of-type { border-top: none; padding-top: 0; }
+  .entry .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.3rem;
+  }
+  .entry h3 { font-family: var(--font-display); font-weight: 500; font-size: 1.22rem; margin: 0 0 0.5rem; }
+  .entry p.def { color: var(--ink-2); max-width: 64ch; margin: 0 0 0.8rem; font-size: 0.98rem; }
+  .entry .why {
+    font-size: 0.9rem;
+    color: var(--ink);
+    border-left: 2px solid var(--accent-text);
+    padding-left: 0.85rem;
+    max-width: 60ch;
+  }
+  .entry .why .tag {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--accent-text);
+    display: block;
+    margin-bottom: 0.2rem;
+  }
+
+  figure.diagram {
+    margin: 1rem 0 0.4rem;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 1.1rem 1.2rem 0.9rem;
+    box-shadow: var(--shadow);
+    max-width: 640px;
+    overflow-x: auto;
+  }
+  figure.diagram svg { display: block; width: 100%; height: auto; }
+  figure.diagram figcaption {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin-top: 0.65rem;
+    padding-top: 0.65rem;
+    border-top: 1px dashed var(--rule);
+  }
+
+  .legend { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+  .legend i { width: 12px; height: 3px; border-radius: 2px; display: inline-block; }
+
+  .mono-num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+
+  footer.colophon {
+    margin-top: 3.5rem;
+    padding-top: 1.6rem;
+    border-top: 1px solid var(--rule);
+    font-size: 0.85rem;
+    color: var(--muted);
+    max-width: 70ch;
+  }
+</style>
+
+<div class="doc">
+  <header class="cover">
+    <p class="kicker">Reference &middot; Zero-to-Fluent Glossary</p>
+    <h1>The Concepts Behind Your Five Projects</h1>
+    <p class="dek">
+      Every term you need to understand — not just use — to build the Stock Analysis Agent,
+      the Valuation Model, and the Portfolio &amp; Backtesting Model, and to defend all three
+      in an essay or an interview. Organized in the order you'll actually meet them.
+    </p>
+    <p class="howto">
+      <b>How to use this:</b> read a chapter before you build the matching project — the
+      table on the left maps each chapter to a project. Each entry has a plain-language
+      definition and a <i>why it matters</i> line tying it back to something you're actually
+      building. Diagrams appear only where a picture genuinely beats a paragraph.
+    </p>
+  </header>
+
+  <div class="layout">
+    <nav class="toc" aria-label="Table of contents">
+      <p class="toc-label">Contents</p>
+      <ol>
+        <li><a href="#sec-1">I. Market Basics</a></li>
+        <li><a href="#sec-2">II. Valuation</a></li>
+        <li><a href="#sec-3">III. Trading Signals</a></li>
+        <li><a href="#sec-4">IV. Portfolio &amp; Risk</a></li>
+        <li><a href="#sec-5">V. Backtesting</a></li>
+        <li><a href="#sec-6">VI. The Agent</a></li>
+      </ol>
+      <div class="toc-map">
+        <p class="toc-label">Maps to</p>
+        <ul>
+          <li><span class="proj">Ch. I&ndash;II</span>Stock Valuation Model</li>
+          <li><span class="proj">Ch. III &amp; VI</span>Stock Analysis Agent</li>
+          <li><span class="proj">Ch. IV&ndash;V</span>Portfolio &amp; Backtesting Model</li>
+        </ul>
+      </div>
+    </nav>
+
+    <main>
+
+      <!-- ================= I. MARKET BASICS ================= -->
+      <section id="sec-1" class="chapter">
+        <h2><span class="num">I.</span> Market Basics</h2>
+        <p class="section-note">The vocabulary everything else assumes you already have. Skim this even if some of it feels obvious.</p>
+
+        <div class="entry">
+          <p class="eyebrow">Ownership</p>
+          <h3>Share / Stock</h3>
+          <p class="def">A share is one unit of ownership in a company. Own a share of a company and you own a tiny, proportional sliver of that company itself — its cash, its factories, its future profits.</p>
+          <div class="why"><span class="tag">Why it matters</span>Every number in these five projects — price, valuation, signal — is describing this one underlying thing: a claim on a real company.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Pricing</p>
+          <h3>Market Price vs. Market Cap</h3>
+          <p class="def">Market price is what one share costs right now, set by the most recent trade. Market cap is that price multiplied by every share outstanding — the market's real-time price tag on the whole company.</p>
+          <div class="why"><span class="tag">Why it matters</span>Your Valuation Model exists purely to check whether market cap is too high or too low relative to what the company is actually worth.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Reporting</p>
+          <h3>The Three Financial Statements</h3>
+          <p class="def">Every public company publishes three documents each quarter. The <b>income statement</b> shows profit over a period. The <b>balance sheet</b> shows what the company owns and owes at one moment. The <b>cash flow statement</b> shows actual cash moving in and out — the one that can't be dressed up with accounting choices.</p>
+          <div class="why"><span class="tag">Why it matters</span>Your DCF model is built entirely from numbers pulled off these three — mostly the cash flow statement.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Vocabulary</p>
+          <h3>Revenue vs. Earnings vs. Free Cash Flow</h3>
+          <p class="def"><b>Revenue</b> is total sales. <b>Earnings</b> (net income) is what's left after every expense, including non-cash ones like depreciation. <b>Free cash flow</b> is the real cash left over after the business funds its own operations and equipment — the number an owner could actually pocket.</p>
+          <div class="why"><span class="tag">Why it matters</span>A DCF values a company on free cash flow specifically, never earnings — cash is what's real; earnings can be an accounting opinion.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Quick multiple</p>
+          <h3>P/E Ratio</h3>
+          <p class="def">Price divided by earnings per share. It's shorthand for "how many years of current profit would it take to pay back this price" — the fastest way to compare whether one stock looks cheap or expensive next to another.</p>
+          <div class="why"><span class="tag">Why it matters</span>It's the quick sanity check that supports — or contradicts — whatever your DCF says.</div>
+        </div>
+      </section>
+
+      <!-- ================= II. VALUATION ================= -->
+      <section id="sec-2" class="chapter">
+        <h2><span class="num">II.</span> Valuation</h2>
+        <p class="section-note">The building blocks of a Discounted Cash Flow (DCF) model — the engine of your Valuation Model project.</p>
+
+        <div class="entry">
+          <p class="eyebrow">Foundational idea</p>
+          <h3>Time Value of Money</h3>
+          <p class="def">A dollar today is worth more than a dollar in five years, because today's dollar can be invested and grow in the meantime. This one idea is why you can't just add up a company's future cash flows — each future dollar has to be shrunk down, or "discounted," to what it's worth today.</p>
+          <div class="why"><span class="tag">Why it matters</span>This is the entire mathematical premise the DCF model runs on. Everything else in this chapter is a consequence of it.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">The discount rate</p>
+          <h3>WACC (Weighted Average Cost of Capital)</h3>
+          <p class="def">The interest rate used to shrink future cash flows down to today's value, reflecting how risky those cash flows are and what an investor could earn elsewhere instead. WACC blends the cost of a company's debt and the cost of its equity into one rate.</p>
+          <div class="why"><span class="tag">Why it matters</span>This is the single most sensitivity-heavy input in the whole model — nudge WACC by one percentage point and your fair-value output can swing 15&ndash;20%.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">The long tail</p>
+          <h3>Terminal Value</h3>
+          <p class="def">You can't forecast cash flows forever, so you project maybe 5&ndash;10 years explicitly, then estimate one lump-sum value standing in for "everything after that." In most real DCFs, this single number is over half the total valuation.</p>
+          <div class="why"><span class="tag">Why it matters</span>It's the part of the model most vulnerable to an unrealistic assumption quietly wrecking the whole output — worth stress-testing.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Putting it together</p>
+          <h3>The DCF, End to End</h3>
+          <p class="def">Forecast free cash flow for each future year, discount each year back to today at the WACC, add a discounted terminal value, and sum it all up. That sum is the company's estimated intrinsic value — compare it to market cap for a buy/sell read.</p>
+          <figure class="diagram">
+            <svg viewBox="0 0 620 210" role="img" aria-labelledby="dcf-title">
+              <title id="dcf-title">Bar chart of discounted cash flows by year summing into an enterprise value</title>
+              <line x1="40" y1="180" x2="600" y2="180" stroke="var(--rule)" stroke-width="1"/>
+              <!-- PV bars -->
+              <g class="mono-num">
+                <rect x="55"  y="158" width="34" height="22" rx="2" fill="var(--chart-amber)"/>
+                <rect x="115" y="161" width="34" height="19" rx="2" fill="var(--chart-amber)"/>
+                <rect x="175" y="164" width="34" height="16" rx="2" fill="var(--chart-amber)"/>
+                <rect x="235" y="167" width="34" height="13" rx="2" fill="var(--chart-amber)"/>
+                <rect x="295" y="169" width="34" height="11" rx="2" fill="var(--chart-amber)"/>
+                <rect x="365" y="122" width="44" height="58" rx="2" fill="var(--chart-plum)"/>
+                <text x="72"  y="150" text-anchor="middle" font-size="10" fill="var(--ink-2)">92</text>
+                <text x="132" y="153" text-anchor="middle" font-size="10" fill="var(--ink-2)">85</text>
+                <text x="192" y="156" text-anchor="middle" font-size="10" fill="var(--ink-2)">79</text>
+                <text x="252" y="159" text-anchor="middle" font-size="10" fill="var(--ink-2)">73</text>
+                <text x="312" y="161" text-anchor="middle" font-size="10" fill="var(--ink-2)">68</text>
+                <text x="387" y="114" text-anchor="middle" font-size="10" fill="var(--ink-2)">250</text>
+              </g>
+              <!-- brace to EV -->
+              <path d="M 415 175 C 440 175, 440 100, 465 100" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="2 3"/>
+              <rect x="470" y="46" width="60" height="134" rx="2" fill="var(--ink)" opacity="0.85"/>
+              <text x="500" y="40" text-anchor="middle" font-size="11" fill="var(--ink)" font-family="var(--font-mono)">647</text>
+              <!-- axis labels -->
+              <g font-family="var(--font-mono)" font-size="10" fill="var(--muted)">
+                <text x="72"  y="195" text-anchor="middle">YEAR 1</text>
+                <text x="132" y="195" text-anchor="middle">YEAR 2</text>
+                <text x="192" y="195" text-anchor="middle">YEAR 3</text>
+                <text x="252" y="195" text-anchor="middle">YEAR 4</text>
+                <text x="312" y="195" text-anchor="middle">YEAR 5</text>
+                <text x="387" y="195" text-anchor="middle">TERMINAL</text>
+                <text x="500" y="195" text-anchor="middle">= EV</text>
+              </g>
+              <g class="legend-svg" font-family="var(--font-mono)" font-size="10" fill="var(--ink-2)">
+                <rect x="440" y="12" width="10" height="10" fill="var(--chart-amber)"/>
+                <text x="454" y="21">Discounted FCF (Yr 1&ndash;5)</text>
+              </g>
+              <g font-family="var(--font-mono)" font-size="10" fill="var(--ink-2)">
+                <rect x="55" y="12" width="10" height="10" fill="var(--chart-plum)"/>
+                <text x="69" y="21">Discounted terminal value</text>
+              </g>
+            </svg>
+            <figcaption>Each year's free cash flow, discounted back to today, plus a discounted terminal value &mdash; summed into enterprise value.</figcaption>
+          </figure>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">The reality check</p>
+          <h3>Comparable Company Analysis (Comps)</h3>
+          <p class="def">Instead of forecasting the future, comps value a company by looking at what similar, already-public companies currently trade for (P/E, EV/EBITDA) and applying that multiple to your company's numbers.</p>
+          <div class="why"><span class="tag">Why it matters</span>It's the check you run alongside the DCF so one bad assumption in your forecast doesn't go unnoticed — two independent methods agreeing is a much stronger claim than one.</div>
+        </div>
+      </section>
+
+      <!-- ================= III. TRADING SIGNALS ================= -->
+      <section id="sec-3" class="chapter">
+        <h2><span class="num">III.</span> Trading Signals</h2>
+        <p class="section-note">The technical toolkit your Agent draws entry/exit decisions from.</p>
+
+        <div class="entry">
+          <p class="eyebrow">The base ingredient</p>
+          <h3>Moving Average (SMA / EMA)</h3>
+          <p class="def">The average closing price over the last N days, recalculated daily so it "moves" with the stock. A simple moving average (SMA) weighs every day equally; an exponential moving average (EMA) weighs recent days more heavily. Either way, it smooths daily noise so the underlying trend is visible.</p>
+          <figure class="diagram">
+            <svg viewBox="0 0 620 210" role="img" aria-labelledby="ma-title">
+              <title id="ma-title">Price line with a short and long moving average crossing at a golden cross</title>
+              <line x1="30" y1="180" x2="600" y2="180" stroke="var(--rule)" stroke-width="1"/>
+              <polyline points="30,150 70,140 110,155 150,130 190,145 230,110 270,120 310,90 350,100 390,70 430,80 470,55 510,65 550,40 590,50"
+                stroke="var(--muted)" stroke-width="1.5" fill="none" opacity="0.7"/>
+              <polyline points="30,148 70,144 110,142 150,136 190,132 230,120 270,114 310,102 350,96 390,84 430,78 470,66 510,62 550,52 590,48"
+                stroke="var(--chart-blue)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+              <polyline points="30,152 70,150 110,148 150,140 190,138 230,118 270,112 310,96 350,92 390,76 430,72 470,58 510,56 550,44 590,42"
+                stroke="var(--chart-amber)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+              <circle cx="230" cy="119" r="4.5" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.5"/>
+              <line x1="230" y1="30" x2="230" y2="180" stroke="var(--ink-2)" stroke-width="1" stroke-dasharray="2 3"/>
+              <text x="234" y="26" font-size="11" fill="var(--ink)" font-family="var(--font-mono)">GOLDEN CROSS</text>
+              <g font-family="var(--font-mono)" font-size="10" fill="var(--ink-2)">
+                <line x1="30" y1="198" x2="46" y2="198" stroke="var(--chart-amber)" stroke-width="2.5"/>
+                <text x="52" y="201">20-day (short) MA</text>
+                <line x1="190" y1="198" x2="206" y2="198" stroke="var(--chart-blue)" stroke-width="2.5"/>
+                <text x="212" y="201">50-day (long) MA</text>
+                <line x1="400" y1="198" x2="416" y2="198" stroke="var(--muted)" stroke-width="1.5"/>
+                <text x="422" y="201">Daily price</text>
+              </g>
+            </svg>
+            <figcaption>Short MA crossing above long MA &mdash; a classic bullish "golden cross" entry signal.</figcaption>
+          </figure>
+          <div class="why"><span class="tag">Why it matters</span>This is the base ingredient nearly every other technical signal in your Agent is built from.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Momentum, binary version</p>
+          <h3>Golden Cross / Death Cross</h3>
+          <p class="def">When a short-term moving average crosses above a long-term one, that's a "golden cross" — a classic bullish (buy) signal. The reverse, crossing below, is a "death cross" — bearish (sell).</p>
+          <div class="why"><span class="tag">Why it matters</span>The simplest concrete entry/exit rule you can code in week one, and a fine baseline to improve on.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Overbought / oversold</p>
+          <h3>RSI (Relative Strength Index)</h3>
+          <p class="def">A 0&ndash;100 oscillator measuring how fast and how far a price has moved recently. Above 70 is generally read as "overbought" (due for a pullback); below 30 as "oversold" (due for a bounce).</p>
+          <figure class="diagram">
+            <svg viewBox="0 0 620 190" role="img" aria-labelledby="rsi-title">
+              <title id="rsi-title">RSI oscillator with overbought and oversold bands</title>
+              <rect x="30" y="20" width="570" height="35" fill="var(--chart-loss)" opacity="0.12"/>
+              <rect x="30" y="120" width="570" height="35" fill="var(--chart-gain)" opacity="0.12"/>
+              <line x1="30" y1="55" x2="600" y2="55" stroke="var(--chart-loss)" stroke-width="1" stroke-dasharray="3 3"/>
+              <line x1="30" y1="120" x2="600" y2="120" stroke="var(--chart-gain)" stroke-width="1" stroke-dasharray="3 3"/>
+              <text x="604" y="59" font-size="10" fill="var(--chart-loss)" font-family="var(--font-mono)">70</text>
+              <text x="604" y="124" font-size="10" fill="var(--chart-gain)" font-family="var(--font-mono)">30</text>
+              <polyline points="30,110 60,90 90,70 120,45 150,35 180,50 210,80 240,105 270,130 300,145 330,150 360,135 390,110 420,80 450,50 480,38 510,55 540,85 570,110 600,95"
+                stroke="var(--chart-amber)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              <text x="34" y="176" font-size="10" fill="var(--muted)" font-family="var(--font-mono)">OVERBOUGHT ZONE &gt; 70 &nbsp;&nbsp;&nbsp; OVERSOLD ZONE &lt; 30</text>
+            </svg>
+            <figcaption>RSI swinging through overbought and oversold bands &mdash; a natural exit-signal source.</figcaption>
+          </figure>
+          <div class="why"><span class="tag">Why it matters</span>Gives your Agent an exit signal that doesn't depend on waiting for a second moving average to cross.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Faster momentum read</p>
+          <h3>MACD (Moving Average Convergence Divergence)</h3>
+          <p class="def">Tracks the gap between two EMAs (the "MACD line") against a smoothed average of that gap (the "signal line"); the histogram bars show the difference between the two. When the MACD line crosses the signal line, that's a momentum shift.</p>
+          <figure class="diagram">
+            <svg viewBox="0 0 620 200" role="img" aria-labelledby="macd-title">
+              <title id="macd-title">MACD histogram with MACD and signal lines crossing a zero line</title>
+              <line x1="30" y1="100" x2="600" y2="100" stroke="var(--rule)" stroke-width="1"/>
+              <g>
+                <rect x="34"  y="80"  width="16" height="20" fill="var(--chart-gain)" opacity="0.55"/>
+                <rect x="58"  y="60"  width="16" height="40" fill="var(--chart-gain)" opacity="0.55"/>
+                <rect x="82"  y="45"  width="16" height="55" fill="var(--chart-gain)" opacity="0.55"/>
+                <rect x="106" y="55"  width="16" height="45" fill="var(--chart-gain)" opacity="0.55"/>
+                <rect x="130" y="75"  width="16" height="25" fill="var(--chart-gain)" opacity="0.55"/>
+                <rect x="154" y="100" width="16" height="12" fill="var(--chart-loss)" opacity="0.55"/>
+                <rect x="178" y="100" width="16" height="30" fill="var(--chart-loss)" opacity="0.55"/>
+                <rect x="202" y="100" width="16" height="42" fill="var(--chart-loss)" opacity="0.55"/>
+                <rect x="226" y="100" width="16" height="35" fill="var(--chart-loss)" opacity="0.55"/>
+                <rect x="250" y="100" width="16" height="18" fill="var(--chart-loss)" opacity="0.55"/>
+                <rect x="274" y="88"  width="16" height="12" fill="var(--chart-gain)" opacity="0.55"/>
+                <rect x="298" y="65"  width="16" height="35" fill="var(--chart-gain)" opacity="0.55"/>
+                <rect x="322" y="48"  width="16" height="52" fill="var(--chart-gain)" opacity="0.55"/>
+                <rect x="346" y="58"  width="16" height="42" fill="var(--chart-gain)" opacity="0.55"/>
+                <rect x="370" y="80"  width="16" height="20" fill="var(--chart-gain)" opacity="0.55"/>
+                <rect x="394" y="100" width="16" height="15" fill="var(--chart-loss)" opacity="0.55"/>
+                <rect x="418" y="100" width="16" height="33" fill="var(--chart-loss)" opacity="0.55"/>
+                <rect x="442" y="100" width="16" height="40" fill="var(--chart-loss)" opacity="0.55"/>
+                <rect x="466" y="100" width="16" height="22" fill="var(--chart-loss)" opacity="0.55"/>
+                <rect x="490" y="85"  width="16" height="15" fill="var(--chart-gain)" opacity="0.55"/>
+                <rect x="514" y="60"  width="16" height="40" fill="var(--chart-gain)" opacity="0.55"/>
+                <rect x="538" y="42"  width="16" height="58" fill="var(--chart-gain)" opacity="0.55"/>
+                <rect x="562" y="55"  width="16" height="45" fill="var(--chart-gain)" opacity="0.55"/>
+                <rect x="586" y="78"  width="16" height="22" fill="var(--chart-gain)" opacity="0.55"/>
+              </g>
+              <polyline points="42,85 66,65 90,50 114,58 138,80 162,100 186,105 210,112 234,108 258,105 282,90 306,70 330,52 354,60 378,82 402,102 426,110 450,105 474,95 498,88 522,65 546,48 570,58 598,80"
+                stroke="var(--chart-amber)" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <polyline points="42,90 66,80 90,68 114,60 138,68 162,85 186,100 210,108 234,110 258,108 282,100 306,88 330,72 354,58 378,64 402,84 426,102 450,108 474,105 498,98 522,88 546,68 570,50 598,58"
+                stroke="var(--chart-blue)" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <g font-family="var(--font-mono)" font-size="10" fill="var(--ink-2)">
+                <line x1="30" y1="180" x2="46" y2="180" stroke="var(--chart-amber)" stroke-width="2"/>
+                <text x="52" y="183">MACD line</text>
+                <line x1="150" y1="180" x2="166" y2="180" stroke="var(--chart-blue)" stroke-width="2"/>
+                <text x="172" y="183">Signal line</text>
+                <rect x="290" y="176" width="10" height="8" fill="var(--chart-gain)" opacity="0.6"/>
+                <text x="304" y="183">Histogram &gt; 0</text>
+              </g>
+            </svg>
+            <figcaption>MACD/signal line crossovers and the histogram that visualizes the gap between them.</figcaption>
+          </figure>
+          <div class="why"><span class="tag">Why it matters</span>A more responsive cousin of the golden cross — popular because it reacts faster to trend changes.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Volatility-aware</p>
+          <h3>Bollinger Bands</h3>
+          <p class="def">A band drawn two standard deviations above and below a moving average. Price hugging the upper band suggests strong momentum (or overbought); touching the lower band suggests the opposite. The bands widen and narrow with volatility itself.</p>
+          <div class="why"><span class="tag">Why it matters</span>Gives your Agent a volatility-aware sense of "how far is too far," rather than a fixed threshold like RSI's 70/30.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">The actual output</p>
+          <h3>Entry / Exit Signal</h3>
+          <p class="def">The literal deliverable of your Agent: a decision, not just an indicator. In practice this means combining two or three of the tools above — e.g. "enter when a golden cross forms <i>and</i> RSI is below 70; exit when RSI crosses above 70 <i>or</i> a death cross forms" — so no single noisy indicator makes the call alone.</p>
+          <div class="why"><span class="tag">Why it matters</span>This combination logic, not any one indicator, is what you'll actually be asked to explain and defend.</div>
+        </div>
+      </section>
+
+      <!-- ================= IV. PORTFOLIO & RISK ================= -->
+      <section id="sec-4" class="chapter">
+        <h2><span class="num">IV.</span> Portfolio &amp; Risk</h2>
+        <p class="section-note">How a collection of positions behaves together &mdash; the risk half of your Portfolio &amp; Backtesting Model.</p>
+
+        <div class="entry">
+          <p class="eyebrow">The goal</p>
+          <h3>Diversification</h3>
+          <p class="def">Spreading capital across positions that don't all move together, so one holding's bad day doesn't sink the whole portfolio. The benefit is entirely a function of how correlated your holdings are &mdash; not how many you own.</p>
+          <div class="why"><span class="tag">Why it matters</span>This is the actual justification for building a correlation matrix at all &mdash; it's not a separate exercise, it's how you measure whether diversification is real.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">The measurement</p>
+          <h3>Correlation</h3>
+          <p class="def">A number from &minus;1 to +1 describing how two assets' returns move together: +1 means lockstep, &minus;1 means exact opposites, 0 means unrelated.</p>
+          <figure class="diagram">
+            <svg viewBox="0 0 520 400" role="img" aria-labelledby="corr-title">
+              <title id="corr-title">Correlation matrix heatmap across five assets</title>
+              <g font-family="var(--font-mono)" font-size="11" fill="var(--ink-2)">
+                <text x="120" y="26" text-anchor="middle">AAPL</text>
+                <text x="184" y="26" text-anchor="middle">MSFT</text>
+                <text x="248" y="26" text-anchor="middle">XOM</text>
+                <text x="312" y="26" text-anchor="middle">GLD</text>
+                <text x="376" y="26" text-anchor="middle">TLT</text>
+                <text x="90" y="60"  text-anchor="end">AAPL</text>
+                <text x="90" y="102" text-anchor="end">MSFT</text>
+                <text x="90" y="144" text-anchor="end">XOM</text>
+                <text x="90" y="186" text-anchor="end">GLD</text>
+                <text x="90" y="228" text-anchor="end">TLT</text>
+              </g>
+              <!-- 5x5 grid, cell 64x42, origin x=88,y=38 -->
+              <!-- row AAPL -->
+              <rect x="88"  y="38" width="64" height="42" fill="var(--chart-amber)"/>
+              <rect x="152" y="38" width="64" height="42" fill="var(--chart-amber)" opacity="0.78"/>
+              <rect x="216" y="38" width="64" height="42" fill="var(--chart-amber)" opacity="0.28"/>
+              <rect x="280" y="38" width="64" height="42" fill="var(--card)"/>
+              <rect x="344" y="38" width="64" height="42" fill="var(--chart-blue)" opacity="0.42"/>
+              <!-- row MSFT -->
+              <rect x="88"  y="80" width="64" height="42" fill="var(--chart-amber)" opacity="0.78"/>
+              <rect x="152" y="80" width="64" height="42" fill="var(--chart-amber)"/>
+              <rect x="216" y="80" width="64" height="42" fill="var(--chart-amber)" opacity="0.22"/>
+              <rect x="280" y="80" width="64" height="42" fill="var(--card)"/>
+              <rect x="344" y="80" width="64" height="42" fill="var(--chart-blue)" opacity="0.38"/>
+              <!-- row XOM -->
+              <rect x="88"  y="122" width="64" height="42" fill="var(--chart-amber)" opacity="0.28"/>
+              <rect x="152" y="122" width="64" height="42" fill="var(--chart-amber)" opacity="0.22"/>
+              <rect x="216" y="122" width="64" height="42" fill="var(--chart-amber)"/>
+              <rect x="280" y="122" width="64" height="42" fill="var(--chart-blue)" opacity="0.18"/>
+              <rect x="344" y="122" width="64" height="42" fill="var(--chart-blue)" opacity="0.24"/>
+              <!-- row GLD -->
+              <rect x="88"  y="164" width="64" height="42" fill="var(--card)"/>
+              <rect x="152" y="164" width="64" height="42" fill="var(--card)"/>
+              <rect x="216" y="164" width="64" height="42" fill="var(--chart-blue)" opacity="0.18"/>
+              <rect x="280" y="164" width="64" height="42" fill="var(--chart-amber)"/>
+              <rect x="344" y="164" width="64" height="42" fill="var(--chart-blue)" opacity="0.30"/>
+              <!-- row TLT -->
+              <rect x="88"  y="206" width="64" height="42" fill="var(--chart-blue)" opacity="0.42"/>
+              <rect x="152" y="206" width="64" height="42" fill="var(--chart-blue)" opacity="0.38"/>
+              <rect x="216" y="206" width="64" height="42" fill="var(--chart-blue)" opacity="0.24"/>
+              <rect x="280" y="206" width="64" height="42" fill="var(--chart-blue)" opacity="0.30"/>
+              <rect x="344" y="206" width="64" height="42" fill="var(--chart-amber)"/>
+              <!-- grid strokes -->
+              <g fill="none" stroke="var(--card)" stroke-width="2">
+                <rect x="88" y="38" width="320" height="210"/>
+              </g>
+              <!-- values -->
+              <g class="mono-num" font-family="var(--font-mono)" font-size="11" text-anchor="middle">
+                <text x="120" y="63" fill="var(--paper)">1.00</text><text x="184" y="63" fill="var(--paper)">0.81</text><text x="248" y="63" fill="var(--ink)">0.19</text><text x="312" y="63" fill="var(--ink)">0.02</text><text x="376" y="63" fill="var(--ink)">&minus;0.31</text>
+                <text x="120" y="105" fill="var(--paper)">0.81</text><text x="184" y="105" fill="var(--paper)">1.00</text><text x="248" y="105" fill="var(--ink)">0.14</text><text x="312" y="105" fill="var(--ink)">0.03</text><text x="376" y="105" fill="var(--ink)">&minus;0.28</text>
+                <text x="120" y="147" fill="var(--ink)">0.19</text><text x="184" y="147" fill="var(--ink)">0.14</text><text x="248" y="147" fill="var(--paper)">1.00</text><text x="312" y="147" fill="var(--ink)">&minus;0.11</text><text x="376" y="147" fill="var(--ink)">&minus;0.17</text>
+                <text x="120" y="189" fill="var(--ink)">0.02</text><text x="184" y="189" fill="var(--ink)">0.03</text><text x="248" y="189" fill="var(--ink)">&minus;0.11</text><text x="312" y="189" fill="var(--paper)">1.00</text><text x="376" y="189" fill="var(--ink)">&minus;0.22</text>
+                <text x="120" y="231" fill="var(--ink)">&minus;0.31</text><text x="184" y="231" fill="var(--ink)">&minus;0.28</text><text x="248" y="231" fill="var(--ink)">&minus;0.17</text><text x="312" y="231" fill="var(--ink)">&minus;0.22</text><text x="376" y="231" fill="var(--paper)">1.00</text>
+              </g>
+              <g font-family="var(--font-mono)" font-size="10" fill="var(--muted)">
+                <rect x="88" y="270" width="14" height="14" fill="var(--chart-blue)" opacity="0.4"/>
+                <text x="106" y="281">Negative</text>
+                <rect x="200" y="270" width="14" height="14" fill="var(--card)" stroke="var(--rule)"/>
+                <text x="218" y="281">~0 (unrelated)</text>
+                <rect x="340" y="270" width="14" height="14" fill="var(--chart-amber)" opacity="0.5"/>
+                <text x="358" y="281">Positive</text>
+              </g>
+            </svg>
+            <figcaption>Diagonal is always 1.00 (an asset perfectly correlates with itself). Bonds (TLT) run negative to equities here &mdash; that's the diversification working.</figcaption>
+          </figure>
+          <div class="why"><span class="tag">Why it matters</span>A portfolio full of stocks highly correlated to each other isn't actually diversified, even if it "looks" like 20 different positions.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Risk, quantified</p>
+          <h3>Volatility</h3>
+          <p class="def">The standard deviation of a stock's returns &mdash; a statistical measure of how much the price swings, in either direction, over time. Higher volatility means bigger, more frequent swings.</p>
+          <div class="why"><span class="tag">Why it matters</span>It's the "risk" half of every risk-adjusted return metric, including the Sharpe ratio below.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Risk-adjusted return</p>
+          <h3>Sharpe Ratio</h3>
+          <p class="def">Return earned above the risk-free rate, divided by volatility. It answers "how much return am I getting per unit of risk taken" &mdash; the standard way to compare two strategies that had different returns <i>and</i> different risk.</p>
+          <figure class="diagram">
+            <svg viewBox="0 0 560 300" role="img" aria-labelledby="sharpe-title">
+              <title id="sharpe-title">Risk versus return scatter plot showing the Sharpe ratio as a slope</title>
+              <line x1="60" y1="250" x2="60" y2="20" stroke="var(--ink-2)" stroke-width="1.5"/>
+              <line x1="60" y1="250" x2="530" y2="250" stroke="var(--ink-2)" stroke-width="1.5"/>
+              <text x="30" y="20" font-size="10" fill="var(--muted)" font-family="var(--font-mono)">RETURN</text>
+              <text x="500" y="270" font-size="10" fill="var(--muted)" font-family="var(--font-mono)">RISK &#8594;</text>
+              <line x1="60" y1="220" x2="470" y2="55" stroke="var(--accent-text)" stroke-width="1.5" stroke-dasharray="4 4"/>
+              <text x="330" y="110" font-size="11" fill="var(--accent-text)" font-family="var(--font-mono)" transform="rotate(-21 330 110)">Sharpe slope</text>
+              <circle cx="60"  cy="220" r="5" fill="var(--muted)"/>
+              <text x="70" y="224" font-size="10" fill="var(--ink-2)" font-family="var(--font-mono)">risk-free</text>
+              <circle cx="160" cy="190" r="6" fill="var(--chart-blue)"/>
+              <circle cx="230" cy="150" r="6" fill="var(--chart-plum)"/>
+              <circle cx="330" cy="110" r="8" fill="var(--chart-amber)" stroke="var(--ink)" stroke-width="1.5"/>
+              <text x="342" y="106" font-size="11" fill="var(--ink)" font-family="var(--font-mono)">your portfolio</text>
+              <circle cx="410" cy="170" r="6" fill="var(--chart-blue)"/>
+              <circle cx="450" cy="70"  r="6" fill="var(--chart-plum)"/>
+            </svg>
+            <figcaption>The steeper the line from the risk-free rate through your portfolio, the higher the Sharpe ratio &mdash; more return per unit of risk.</figcaption>
+          </figure>
+          <div class="why"><span class="tag">Why it matters</span>This is likely the single number a reader uses to judge whether your backtested strategy is actually good, or just lucky.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Survivability</p>
+          <h3>Max Drawdown</h3>
+          <p class="def">The largest peak-to-trough decline your portfolio experiences during the period tested, as a percentage. A strategy can have a great average return and still be unsurvivable if its max drawdown is 60%.</p>
+          <div class="why"><span class="tag">Why it matters</span>This is the "could a real investor have actually stomached this" check on your backtest &mdash; see the equity-curve diagram in Chapter V.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Market exposure</p>
+          <h3>Beta</h3>
+          <p class="def">How much a stock or portfolio moves relative to the overall market (usually the S&amp;P 500). A beta of 1.5 means the position tends to swing 50% more than the market in either direction.</p>
+          <div class="why"><span class="tag">Why it matters</span>Tells you whether your portfolio's risk is coming from genuine stock-picking or just from carrying more market exposure than average.</div>
+        </div>
+      </section>
+
+      <!-- ================= V. BACKTESTING ================= -->
+      <section id="sec-5" class="chapter">
+        <h2><span class="num">V.</span> Backtesting</h2>
+        <p class="section-note">Turning a strategy into evidence &mdash; the other half of the Portfolio &amp; Backtesting Model.</p>
+
+        <div class="entry">
+          <p class="eyebrow">The core idea</p>
+          <h3>Backtest</h3>
+          <p class="def">Running your strategy's rules against historical data to see what would have happened, as if you'd traded it for real. It's the only way to gather evidence for a strategy before risking real money on it.</p>
+          <figure class="diagram">
+            <svg viewBox="0 0 620 220" role="img" aria-labelledby="equity-title">
+              <title id="equity-title">Equity curve of a strategy versus a benchmark, with a drawdown period shaded</title>
+              <line x1="30" y1="190" x2="600" y2="190" stroke="var(--rule)" stroke-width="1"/>
+              <polyline points="30,170 80,162 130,150 180,140 230,130 280,122 330,112 380,150 430,175 480,160 530,120 580,95"
+                stroke="var(--chart-blue)" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <polyline points="30,168 80,155 130,138 180,120 230,100 280,80 330,60 380,105 430,140 480,100 530,55 580,30"
+                stroke="var(--chart-amber)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+              <path d="M 330,60 L 380,105 L 430,140 L 480,100 L 430,140 L 380,105 L 330,60 Z" fill="var(--chart-loss)" opacity="0.14"/>
+              <line x1="330" y1="60" x2="330" y2="185" stroke="var(--chart-loss)" stroke-width="1" stroke-dasharray="2 3"/>
+              <line x1="430" y1="140" x2="430" y2="185" stroke="var(--chart-loss)" stroke-width="1" stroke-dasharray="2 3"/>
+              <text x="345" y="200" font-size="10" fill="var(--chart-loss)" font-family="var(--font-mono)">MAX DRAWDOWN</text>
+              <g font-family="var(--font-mono)" font-size="10" fill="var(--ink-2)">
+                <line x1="30" y1="20" x2="46" y2="20" stroke="var(--chart-amber)" stroke-width="2.5"/>
+                <text x="52" y="23">Strategy</text>
+                <line x1="150" y1="20" x2="166" y2="20" stroke="var(--chart-blue)" stroke-width="2"/>
+                <text x="172" y="23">Benchmark (buy &amp; hold)</text>
+              </g>
+            </svg>
+            <figcaption>The strategy outpaces the benchmark overall, but the shaded dip is its max drawdown &mdash; the real cost of that outperformance.</figcaption>
+          </figure>
+          <div class="why"><span class="tag">Why it matters</span>This chart is the headline deliverable of your Portfolio &amp; Backtesting Model &mdash; it's the single image that proves the whole project worked.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">The classic trap</p>
+          <h3>Lookahead Bias</h3>
+          <p class="def">The single most common way a backtest lies to you: accidentally letting the strategy "see" information it wouldn't have had yet &mdash; for example, using a day's closing price to decide whether to buy earlier that same day.</p>
+          <div class="why"><span class="tag">Why it matters</span>Undetected, your results will look great and be completely fake. Explicitly stating you checked for this is a credibility signal in your write-up.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Guarding against overfitting</p>
+          <h3>Walk-Forward Testing</h3>
+          <p class="def">Instead of testing a strategy once on the full historical dataset, you repeatedly tune it on one time window and test it on the very next, unseen window, then roll forward.</p>
+          <div class="why"><span class="tag">Why it matters</span>Protects against a strategy that was accidentally over-fit to one lucky historical period rather than genuinely predictive.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">The unglamorous detail</p>
+          <h3>Transaction Costs &amp; Slippage</h3>
+          <p class="def">The commission you pay and the small, unfavorable gap between the price you saw and the price you actually got filled at. A strategy that looks profitable before costs can easily be a loser after them.</p>
+          <div class="why"><span class="tag">Why it matters</span>Including this detail signals you understand backtesting is not just a math exercise &mdash; it's the difference between a toy model and a credible one.</div>
+        </div>
+      </section>
+
+      <!-- ================= VI. THE AGENT ================= -->
+      <section id="sec-6" class="chapter">
+        <h2><span class="num">VI.</span> The Agent</h2>
+        <p class="section-note">What actually makes item 1 an "agent" rather than a script.</p>
+
+        <div class="entry">
+          <p class="eyebrow">The brain</p>
+          <h3>LLM (Large Language Model)</h3>
+          <p class="def">The AI model (like Claude) that can read text, reason over it, and generate a response &mdash; including deciding what to do next, not just what to say.</p>
+          <div class="why"><span class="tag">Why it matters</span>It's what turns your rule-based signals into something that can also read a news headline and explain its reasoning in plain English.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">How it acts</p>
+          <h3>Tool Calling</h3>
+          <p class="def">The mechanism that lets an LLM actually do things instead of just talking. You give it a defined set of functions &mdash; e.g. <code class="mono-num">get_stock_price()</code>, <code class="mono-num">get_moving_average()</code> &mdash; describe what each does, and the model decides when to call one and with what arguments.</p>
+          <div class="why"><span class="tag">Why it matters</span>This is exactly how your Agent would pull live data instead of you hardcoding a fixed dataset.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Why it's an "agent"</p>
+          <h3>The Agent Loop</h3>
+          <p class="def">The repeating cycle an agent runs: <b>observe</b> (pull current data) &rarr; <b>reason</b> (the LLM decides what it means) &rarr; <b>act</b> (call a tool for more data, or produce a decision) &rarr; observe the result &rarr; repeat, until it reaches a final answer.</p>
+          <figure class="diagram">
+            <svg viewBox="0 0 560 300" role="img" aria-labelledby="loop-title">
+              <title id="loop-title">Circular diagram of the observe, reason, act, output agent loop</title>
+              <defs>
+                <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ink-2)"/>
+                </marker>
+              </defs>
+              <rect x="40"  y="20"  width="150" height="58" rx="6" fill="var(--card)" stroke="var(--chart-amber)" stroke-width="2"/>
+              <text x="115" y="44" text-anchor="middle" font-size="13" fill="var(--ink)" font-family="var(--font-display)">Observe</text>
+              <text x="115" y="63" text-anchor="middle" font-size="9.5" fill="var(--muted)" font-family="var(--font-mono)">pull market data</text>
+
+              <rect x="370" y="20"  width="150" height="58" rx="6" fill="var(--card)" stroke="var(--chart-blue)" stroke-width="2"/>
+              <text x="445" y="44" text-anchor="middle" font-size="13" fill="var(--ink)" font-family="var(--font-display)">Reason</text>
+              <text x="445" y="63" text-anchor="middle" font-size="9.5" fill="var(--muted)" font-family="var(--font-mono)">the LLM interprets it</text>
+
+              <rect x="370" y="212" width="150" height="58" rx="6" fill="var(--card)" stroke="var(--chart-plum)" stroke-width="2"/>
+              <text x="445" y="236" text-anchor="middle" font-size="13" fill="var(--ink)" font-family="var(--font-display)">Act</text>
+              <text x="445" y="255" text-anchor="middle" font-size="9.5" fill="var(--muted)" font-family="var(--font-mono)">calls a tool</text>
+
+              <rect x="40"  y="212" width="150" height="58" rx="6" fill="var(--card)" stroke="var(--ink-2)" stroke-width="2"/>
+              <text x="115" y="236" text-anchor="middle" font-size="13" fill="var(--ink)" font-family="var(--font-display)">Output</text>
+              <text x="115" y="255" text-anchor="middle" font-size="9.5" fill="var(--muted)" font-family="var(--font-mono)">entry/exit signal</text>
+
+              <path d="M 190 49 L 370 49" stroke="var(--ink-2)" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+              <path d="M 445 78 L 445 212" stroke="var(--ink-2)" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+              <path d="M 370 241 L 190 241" stroke="var(--ink-2)" stroke-width="1.5" fill="none" marker-end="url(#arrow)" stroke-dasharray="1 0"/>
+              <path d="M 115 212 C 115 150, 40 150, 40 100" stroke="var(--muted)" stroke-width="1.5" fill="none" marker-end="url(#arrow)" stroke-dasharray="3 3"/>
+              <text x="20" y="150" font-size="9.5" fill="var(--muted)" font-family="var(--font-mono)" transform="rotate(-90 20 150)">loops if unresolved</text>
+              <text x="280" y="145" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="var(--font-mono)">repeats until a final decision</text>
+            </svg>
+            <figcaption>This loop &mdash; not one single API call &mdash; is what separates an "agent" from a plain script.</figcaption>
+          </figure>
+          <div class="why"><span class="tag">Why it matters</span>This is why item 1 on your list is called an Agent and not a screener &mdash; be ready to explain this loop specifically.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">What the model can see</p>
+          <h3>Context / Prompt</h3>
+          <p class="def">The full set of information the LLM sees before responding: your instructions, the conversation so far, and any data the tools returned. The model has no memory beyond what's inside this window.</p>
+          <div class="why"><span class="tag">Why it matters</span>Your Agent's quality lives or dies on what data you feed into its context &mdash; vague or missing data produces a vague or wrong signal, same as it would for a human analyst.</div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <footer class="colophon">
+    Built as a companion to the Stock Analysis Agent, Stock Valuation Model, and Portfolio &amp; Backtesting Model.
+    Chapters I&ndash;II underpin the Valuation Model, III &amp; VI underpin the Agent, and IV&ndash;V underpin the
+    Portfolio &amp; Backtesting Model &mdash; build in that order and each chapter arrives right when you need it.
+  </footer>
+</div>
