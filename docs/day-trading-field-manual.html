@@ -1,0 +1,490 @@
+<title>Day Trading: A Field Manual</title>
+<style>
+  :root {
+    --paper: #ECEEEC; --card: #F8F9F7; --card-border: #D8DDDA;
+    --ink: #1B2226; --ink-2: #4B565C; --muted: #8A9297; --rule: #D3D8D5;
+    --accent-text: #8F5A14; --accent-soft: #F1E3CC;
+    --chart-amber: #B8791E; --chart-blue: #1F6FA6; --chart-plum: #8A3F7A;
+    --chart-gain: #2F8F5B; --chart-loss: #C1402E; --chart-grid: #D3D8D5;
+    --shadow: 0 1px 2px rgba(27,34,38,0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #14181B; --card: #1D2226; --card-border: #2B3237;
+      --ink: #ECEDE9; --ink-2: #B7C0C4; --muted: #7C8A90; --rule: #2B3237;
+      --accent-text: #E3AE5E; --accent-soft: #3A2C15;
+      --chart-amber: #BC8434; --chart-blue: #4B8EC4; --chart-plum: #A5619E;
+      --chart-gain: #3EA070; --chart-loss: #E06A54; --chart-grid: #2B3237;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #14181B; --card: #1D2226; --card-border: #2B3237;
+    --ink: #ECEDE9; --ink-2: #B7C0C4; --muted: #7C8A90; --rule: #2B3237;
+    --accent-text: #E3AE5E; --accent-soft: #3A2C15;
+    --chart-amber: #BC8434; --chart-blue: #4B8EC4; --chart-plum: #A5619E;
+    --chart-gain: #3EA070; --chart-loss: #E06A54; --chart-grid: #2B3237;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  :root[data-theme="light"] {
+    --paper: #ECEEEC; --card: #F8F9F7; --card-border: #D8DDDA;
+    --ink: #1B2226; --ink-2: #4B565C; --muted: #8A9297; --rule: #D3D8D5;
+    --accent-text: #8F5A14; --accent-soft: #F1E3CC;
+    --chart-amber: #B8791E; --chart-blue: #1F6FA6; --chart-plum: #8A3F7A;
+    --chart-gain: #2F8F5B; --chart-loss: #C1402E; --chart-grid: #D3D8D5;
+    --shadow: 0 1px 2px rgba(27,34,38,0.06);
+  }
+
+  * { box-sizing: border-box; }
+  body { background: var(--paper); }
+
+  .doc {
+    --font-display: "Iowan Old Style", "Sitka Text", "Noto Serif", Georgia, serif;
+    --font-body: Optima, Candara, "Noto Sans", "Segoe UI", sans-serif;
+    --font-mono: "SF Mono", Menlo, Consolas, "Roboto Mono", monospace;
+    font-family: var(--font-body);
+    color: var(--ink);
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 5rem;
+    line-height: 1.5;
+  }
+  a { color: var(--accent-text); }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+
+  .kicker { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin: 0 0 0.9rem; }
+  .cover h1 { font-family: var(--font-display); font-weight: 500; font-size: clamp(1.9rem, 3.6vw, 2.7rem); line-height: 1.15; margin: 0 0 0.9rem; max-width: 22ch; text-wrap: balance; }
+  .dek { font-size: 1.05rem; color: var(--ink-2); max-width: 66ch; margin: 0 0 1.6rem; }
+
+  .warnbox {
+    background: var(--card); border: 1px solid var(--card-border); border-left: 3px solid var(--chart-loss);
+    border-radius: 4px; padding: 1rem 1.2rem; max-width: 70ch; margin: 0 0 1.2rem;
+  }
+  .warnbox .tag { font-family: var(--font-mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--chart-loss); display: block; margin-bottom: 0.3rem; }
+  .warnbox p { margin: 0; color: var(--ink); font-size: 0.95rem; }
+
+  .howto { background: var(--card); border: 1px solid var(--card-border); border-left: 3px solid var(--accent-text); border-radius: 4px; padding: 0.9rem 1.1rem; max-width: 70ch; font-size: 0.92rem; color: var(--ink-2); margin: 0 0 2.6rem; }
+  .howto b { color: var(--ink); }
+
+  .layout { display: grid; grid-template-columns: 216px minmax(0,1fr); gap: 3rem; align-items: start; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } .toc { position: static !important; } }
+
+  .toc { position: sticky; top: 2rem; }
+  .toc-label { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin: 0 0 0.6rem; }
+  .toc ol { list-style: none; margin: 0 0 1.8rem; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+  .toc a { text-decoration: none; color: var(--ink-2); font-size: 0.9rem; display: block; padding: 0.15rem 0; border-left: 2px solid transparent; padding-left: 0.7rem; }
+  .toc a:hover { color: var(--ink); border-left-color: var(--accent-text); }
+  .toc-map { border-top: 1px solid var(--rule); padding-top: 1rem; }
+  .toc-map p.note { font-size: 0.78rem; color: var(--muted); line-height: 1.5; margin: 0; }
+
+  section.chapter { margin-bottom: 3.2rem; scroll-margin-top: 1.5rem; }
+  .chapter h2 { font-family: var(--font-display); font-weight: 500; font-size: 1.55rem; margin: 0 0 0.35rem; display: flex; align-items: baseline; gap: 0.6rem; }
+  .chapter h2 .num { font-family: var(--font-mono); color: var(--accent-text); font-size: 1.1rem; }
+  .chapter .section-note { color: var(--muted); font-size: 0.92rem; margin: 0 0 1.6rem; max-width: 64ch; padding-bottom: 1.4rem; border-bottom: 1px solid var(--rule); }
+
+  .entry { padding: 1.3rem 0; border-top: 1px solid var(--rule); }
+  .entry:first-of-type { border-top: none; padding-top: 0; }
+  .entry .eyebrow { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); margin: 0 0 0.3rem; }
+  .entry h3 { font-family: var(--font-display); font-weight: 500; font-size: 1.22rem; margin: 0 0 0.5rem; }
+  .entry p.def { color: var(--ink-2); max-width: 66ch; margin: 0 0 0.8rem; font-size: 0.98rem; }
+  .entry .why { font-size: 0.9rem; color: var(--ink); border-left: 2px solid var(--accent-text); padding-left: 0.85rem; max-width: 62ch; }
+  .entry .why .tag { font-family: var(--font-mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--accent-text); display: block; margin-bottom: 0.2rem; }
+  .entry .source { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); margin-top: 0.4rem; }
+
+  figure.diagram { margin: 1rem 0 0.4rem; background: var(--card); border: 1px solid var(--card-border); border-radius: 8px; padding: 1.1rem 1.2rem 0.9rem; box-shadow: var(--shadow); max-width: 660px; overflow-x: auto; }
+  figure.diagram svg { display: block; width: 100%; height: auto; }
+  figure.diagram figcaption { font-family: var(--font-mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-top: 0.65rem; padding-top: 0.65rem; border-top: 1px dashed var(--rule); }
+
+  .mono-num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+  code.inline { font-family: var(--font-mono); font-size: 0.88em; background: var(--card); border: 1px solid var(--card-border); border-radius: 3px; padding: 0.05em 0.35em; }
+
+  footer.colophon { margin-top: 3.5rem; padding-top: 1.6rem; border-top: 1px solid var(--rule); font-size: 0.82rem; color: var(--muted); max-width: 74ch; }
+  footer.colophon h4 { font-family: var(--font-mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); margin: 0 0 0.6rem; }
+  footer.colophon ul { margin: 0 0 1.4rem; padding-left: 1.1rem; }
+  footer.colophon li { margin-bottom: 0.25rem; }
+</style>
+
+<div class="doc">
+  <header class="cover">
+    <p class="kicker">Reference &middot; Companion to Your Concept Doc</p>
+    <h1>Day Trading: A Field Manual</h1>
+    <p class="dek">
+      Execution mechanics, risk management, the investment-banking activity that actually moves
+      the stocks you'd trade, what to watch out for, and where AI genuinely helps versus where it
+      can't.
+    </p>
+    <div class="warnbox">
+      <span class="tag">Read this before anything else</span>
+      <p>No document, course, or AI can promise you'll be profitable &mdash; the honest data on that
+      is in Chapter V, with sources. What this manual can do is make sure you're never losing money
+      to something you simply didn't know. Competence is the goal here, not a guarantee.</p>
+    </div>
+    <p class="howto">
+      <b>How to use this:</b> Chapter I isn't optional preamble &mdash; read it before you touch a
+      demo account, let alone real money. Everything after it assumes you already have those rules
+      in place. Chapter VI ties this whole manual back to the Stock Analysis Agent already in your
+      repo.
+    </p>
+  </header>
+
+  <div class="layout">
+    <nav class="toc" aria-label="Table of contents">
+      <p class="toc-label">Contents</p>
+      <ol>
+        <li><a href="#sec-1">I. Risk Management</a></li>
+        <li><a href="#sec-2">II. Mechanics &amp; Execution</a></li>
+        <li><a href="#sec-3">III. Reading the Tape</a></li>
+        <li><a href="#sec-4">IV. Where IB Meets Day Trading</a></li>
+        <li><a href="#sec-5">V. What to Watch Out For</a></li>
+        <li><a href="#sec-6">VI. AI as Co-Pilot</a></li>
+      </ol>
+      <div class="toc-map">
+        <p class="note">Forex and commodities get their own companion docs once this one's solid &mdash; deliberately not folding everything into one file.</p>
+      </div>
+    </nav>
+
+    <main>
+
+      <!-- ================= I. RISK MANAGEMENT ================= -->
+      <section id="sec-1" class="chapter">
+        <h2><span class="num">I.</span> Risk Management</h2>
+        <p class="section-note">Read this chapter before any other. It's more predictive of whether you're still trading in a year than any indicator in Chapter III.</p>
+
+        <div class="entry">
+          <p class="eyebrow">Survival, not strategy</p>
+          <h3>Position Sizing &mdash; The 1% Rule</h3>
+          <p class="def">Never risk more than 1&ndash;2% of total account equity on a single trade. This isn't about any one trade being "safe" &mdash; it's that even a strategy with a genuine edge will have losing streaks, and a strict per-trade cap is what stops five or ten losses in a row from ending the account entirely.</p>
+          <figure class="diagram">
+            <svg viewBox="0 0 620 200" role="img" aria-labelledby="risk-title">
+              <title id="risk-title">Diagram showing position sizing math from account risk, stop-loss, and target</title>
+              <line x1="60" y1="40" x2="60" y2="160" stroke="var(--rule)" stroke-width="1"/>
+              <line x1="60" y1="140" x2="560" y2="140" stroke="var(--chart-loss)" stroke-width="2"/>
+              <line x1="60" y1="90" x2="560" y2="90" stroke="var(--ink)" stroke-width="2"/>
+              <line x1="60" y1="55" x2="560" y2="55" stroke="var(--chart-gain)" stroke-width="2"/>
+              <text x="566" y="144" font-size="11" fill="var(--chart-loss)" font-family="var(--font-mono)">STOP $48</text>
+              <text x="566" y="94" font-size="11" fill="var(--ink)" font-family="var(--font-mono)">ENTRY $50</text>
+              <text x="566" y="59" font-size="11" fill="var(--chart-gain)" font-family="var(--font-mono)">TARGET $54</text>
+              <path d="M 90 90 L 90 140" stroke="var(--chart-loss)" stroke-width="1.5" marker-end="url(#a1)" marker-start="url(#a1)"/>
+              <text x="98" y="118" font-size="10" fill="var(--chart-loss)" font-family="var(--font-mono)">risk $2/sh</text>
+              <path d="M 160 55 L 160 90" stroke="var(--chart-gain)" stroke-width="1.5" marker-end="url(#a1)" marker-start="url(#a1)"/>
+              <text x="168" y="75" font-size="10" fill="var(--chart-gain)" font-family="var(--font-mono)">reward $4/sh</text>
+              <defs>
+                <marker id="a1" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                  <path d="M0,0 L8,4 L0,8 z" fill="var(--ink-2)"/>
+                </marker>
+              </defs>
+              <rect x="270" y="170" width="300" height="1" fill="none"/>
+              <text x="60" y="185" font-size="11" fill="var(--ink-2)" font-family="var(--font-mono)">$10,000 account &times; 1% risk = $100 &divide; $2 risk/share = 50 shares &nbsp;&nbsp;|&nbsp;&nbsp; risk:reward = 1:2</text>
+            </svg>
+            <figcaption>Position size is derived from your risk cap and stop distance &mdash; never from "how much do I want to buy."</figcaption>
+          </figure>
+          <div class="why"><span class="tag">Why it matters</span>This turns "how many shares should I buy" from a gut feeling into a fixed calculation &mdash; the same one every time, regardless of how confident you feel about the trade.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">The most-skipped rule</p>
+          <h3>Stop-Loss Orders</h3>
+          <p class="def">An order that automatically exits a losing position once it hits a predetermined price. It's the single most skipped &mdash; and single most account-ending &mdash; omission in day trading. "I'll get out if it keeps falling" is a promise that's easy to make on paper and remarkably hard to keep while watching a real loss grow in real time.</p>
+          <div class="why"><span class="tag">Why it matters</span>A stop-loss set before entry removes the decision from the exact moment you're least equipped to make it well.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Set before you enter, not during</p>
+          <h3>Risk/Reward Ratio</h3>
+          <p class="def">Comparing what you stand to lose (distance to stop) against what you stand to gain (distance to target) before the trade, not after. A strategy can be profitable even with a win rate under 50% if the winners are large enough relative to the losers &mdash; but only if this ratio is decided in advance, not adjusted emotionally mid-trade.</p>
+          <div class="why"><span class="tag">Why it matters</span>This is the number that actually determines long-run profitability, not win rate alone &mdash; a trader who's right 40% of the time can still come out ahead with a strong enough risk/reward ratio.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Your own circuit breaker</p>
+          <h3>Max Daily Loss Limit</h3>
+          <p class="def">A hard stop for the <i>day</i>, not just the trade &mdash; e.g. "if I'm down 3% of account equity today, I'm done trading until tomorrow, no exceptions." This is what stands between one bad morning and a genuinely bad month.</p>
+          <div class="why"><span class="tag">Why it matters</span>This is the rule that directly prevents revenge trading (Chapter V) &mdash; it removes the option before the emotional trigger even shows up.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Amplifies both directions</p>
+          <h3>Leverage &amp; Margin</h3>
+          <p class="def">Borrowed buying power that multiplies gains <i>and</i> losses equally. Day trading margin accounts commonly allow up to 4x intraday leverage, meaning a 5% adverse move against your position is actually a 20% loss on your own capital.</p>
+          <div class="why"><span class="tag">Why it matters</span>Leverage doesn't create risk out of nothing &mdash; it removes your margin for error on risk that was already there.</div>
+        </div>
+      </section>
+
+      <!-- ================= II. MECHANICS ================= -->
+      <section id="sec-2" class="chapter">
+        <h2><span class="num">II.</span> Mechanics &amp; Execution</h2>
+        <p class="section-note">The plumbing: how an order actually becomes a filled trade, and the rules that govern when and how you can trade.</p>
+
+        <div class="entry">
+          <p class="eyebrow">Speed vs. control</p>
+          <h3>Order Types</h3>
+          <p class="def"><b>Market order</b> fills instantly at the best available price &mdash; fast, but you don't control the price you get. <b>Limit order</b> only fills at your specified price or better &mdash; you control price, not timing, and it might never fill. <b>Stop order</b> becomes a market order once a trigger price is hit (the standard way to implement a stop-loss). <b>Stop-limit</b> combines both, adding price control to a stop trigger at the cost of a fill guarantee.</p>
+          <div class="why"><span class="tag">Why it matters</span>Using a market order for your stop-loss in a fast-moving, thin stock is how "I had a stop at $48" turns into "I got filled at $44" &mdash; know which one you're actually placing.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">The invisible cost</p>
+          <h3>Bid-Ask Spread &amp; Slippage</h3>
+          <p class="def">The bid is the highest price a buyer will currently pay; the ask is the lowest a seller will accept. The gap between them is a real cost paid on every single trade, before you've made or lost a cent on direction. Slippage is the further gap between the price you expected and the price you actually got &mdash; worse in fast-moving or illiquid stocks.</p>
+          <div class="why"><span class="tag">Why it matters</span>A strategy that looks profitable ignoring the spread can be a loser once it's included &mdash; the same lesson as transaction costs in Chapter V of your concept reference doc, just intraday and sharper.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Changed June 2026 &mdash; verify with your broker</p>
+          <h3>The Pattern Day Trader Rule</h3>
+          <p class="def">For years, U.S. retail traders needed $25,000 minimum equity to make more than 3 day trades in 5 business days in a margin account. <b>As of June 4, 2026, FINRA formally eliminated that fixed $25k threshold</b>, replacing it with a requirement to hold equity proportional to your actual intraday market exposure rather than a flat dollar number. Brokerages have until October 2027 to fully implement the new system, so the practical rules may still vary firm to firm during the transition.</p>
+          <div class="why"><span class="tag">Why it matters</span>Don't assume the old $25k number still applies just because it's widely repeated online &mdash; check your actual broker's current policy, since this changed very recently and implementation is still rolling out.</div>
+          <p class="source">Source: SEC approval of FINRA Rule 4210 amendments, effective June 4, 2026 (finra.org, sec.gov)</p>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Since May 2024</p>
+          <h3>Settlement (T+1)</h3>
+          <p class="def">U.S. stock, ETF, and bond trades settle one business day after execution (a 2024 change from the previous two-day standard). This affects how quickly proceeds from a sale become usable buying power for a new trade.</p>
+          <div class="why"><span class="tag">Why it matters</span>Worth knowing precisely if you're chaining trades and expecting funds to be available &mdash; it's faster than it used to be, but it isn't instant.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">The day isn't uniform</p>
+          <h3>Session Structure</h3>
+          <p class="def">The first 30&ndash;60 minutes after the open carry the highest volume and volatility, as overnight news and orders all clear at once. Midday (roughly 11:30am&ndash;2pm ET) is typically the quietest, choppiest, most whipsaw-prone stretch &mdash; the exact conditions your concept doc's Chapter III warned about. The final "power hour" before close sees volume pick back up. Pre-market and after-hours sessions exist but trade on thin volume with wide spreads.</p>
+          <figure class="diagram">
+            <svg viewBox="0 0 620 200" role="img" aria-labelledby="session-title">
+              <title id="session-title">Chart of trading volume and volatility across the trading day</title>
+              <line x1="40" y1="160" x2="600" y2="160" stroke="var(--rule)" stroke-width="1"/>
+              <path d="M 40,80 C 80,40 110,45 150,90 C 220,150 320,155 400,145 C 460,135 520,90 560,55 L 600,45 L 600,160 L 40,160 Z"
+                fill="var(--chart-amber)" opacity="0.22"/>
+              <path d="M 40,80 C 80,40 110,45 150,90 C 220,150 320,155 400,145 C 460,135 520,90 560,55 L 600,45"
+                stroke="var(--chart-amber)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+              <g font-family="var(--font-mono)" font-size="10" fill="var(--ink-2)">
+                <text x="40" y="178" text-anchor="start">9:30 OPEN</text>
+                <text x="300" y="178" text-anchor="middle">MIDDAY LULL</text>
+                <text x="560" y="178" text-anchor="end">4:00 CLOSE</text>
+              </g>
+              <text x="70" y="60" font-size="10" fill="var(--accent-text)" font-family="var(--font-mono)">high vol.</text>
+              <text x="290" y="172" font-size="10" fill="var(--muted)" font-family="var(--font-mono)">whipsaw-prone</text>
+              <text x="530" y="70" font-size="10" fill="var(--accent-text)" font-family="var(--font-mono)">power hour</text>
+            </svg>
+            <figcaption>Volume and volatility roughly by time of day &mdash; a stylized shape, not live data, but the pattern holds most trading days.</figcaption>
+          </figure>
+          <div class="why"><span class="tag">Why it matters</span>The same setup that works cleanly at 9:35am can whipsaw relentlessly at 12:30pm &mdash; time of day is itself a filter worth applying.</div>
+        </div>
+      </section>
+
+      <!-- ================= III. READING THE TAPE ================= -->
+      <section id="sec-3" class="chapter">
+        <h2><span class="num">III.</span> Reading the Tape</h2>
+        <p class="section-note">Intraday-specific tools &mdash; shorter timeframes than the daily indicators in your concept reference doc, same underlying discipline.</p>
+
+        <div class="entry">
+          <p class="eyebrow">What the desks actually watch</p>
+          <h3>VWAP (Volume-Weighted Average Price)</h3>
+          <p class="def">The average price a stock has traded at today, weighted by volume at each price level, resetting every morning. It's the single most-watched intraday reference line on professional desks &mdash; institutions use it to judge whether their own executions got a good price, and many day traders use "trading above VWAP" as a simple bullish-bias filter.</p>
+          <figure class="diagram">
+            <svg viewBox="0 0 620 190" role="img" aria-labelledby="vwap-title">
+              <title id="vwap-title">Intraday price line crossing above a VWAP line</title>
+              <line x1="30" y1="160" x2="600" y2="160" stroke="var(--rule)" stroke-width="1"/>
+              <rect x="330" y="20" width="270" height="140" fill="var(--chart-gain)" opacity="0.08"/>
+              <polyline points="30,120 90,128 150,110 210,118 270,100 330,95 390,80 450,70 510,55 570,45 600,42"
+                stroke="var(--chart-blue)" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <polyline points="30,115 90,105 150,122 210,90 270,105 330,88 390,60 450,72 510,50 570,58 600,40"
+                stroke="var(--chart-amber)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+              <text x="336" y="34" font-size="10" fill="var(--chart-gain)" font-family="var(--font-mono)">ABOVE VWAP &mdash; BULLISH BIAS</text>
+              <g font-family="var(--font-mono)" font-size="10" fill="var(--ink-2)">
+                <line x1="30" y1="178" x2="46" y2="178" stroke="var(--chart-amber)" stroke-width="2.5"/>
+                <text x="52" y="181">Price</text>
+                <line x1="130" y1="178" x2="146" y2="178" stroke="var(--chart-blue)" stroke-width="2"/>
+                <text x="152" y="181">VWAP</text>
+              </g>
+            </svg>
+            <figcaption>Price crossing and staying above VWAP is one of the simplest, most widely-used intraday bias filters.</figcaption>
+          </figure>
+          <div class="why"><span class="tag">Why it matters</span>Because institutions use VWAP as their own execution benchmark, price behavior around it reflects real, large-scale order flow &mdash; not just retail sentiment.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Not a law of physics</p>
+          <h3>Support &amp; Resistance</h3>
+          <p class="def">Price levels where a stock has repeatedly stopped falling (support) or stopped rising (resistance), because enough buyers or sellers previously showed up there. A level breaking is just as meaningful a signal as a level holding &mdash; treat both as information, not as a guaranteed wall.</p>
+          <div class="why"><span class="tag">Why it matters</span>These levels are exactly where stop-losses and take-profit orders cluster in practice, which is part of why price often reacts there &mdash; it's somewhat self-fulfilling.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">A named, testable setup</p>
+          <h3>Opening Range Breakout</h3>
+          <p class="def">A setup based on the high/low of the first N minutes of trading (commonly 5, 15, or 30 minutes). A break above or below that range is read as a directional signal for the rest of the session.</p>
+          <div class="why"><span class="tag">Why it matters</span>This is exactly the kind of rule that should go through the same backtesting and walk-forward process as the Agent's moving-average rules &mdash; not be trusted just because it's commonly named.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Continue or fill?</p>
+          <h3>Gap Trading</h3>
+          <p class="def">When a stock opens significantly above or below its previous close, usually on overnight news, leaving a visible "gap" on the chart. Gaps can continue in the direction they opened (momentum) or revert back toward the prior close (fill) &mdash; and knowing which is more likely for a given stock or situation is a genuinely testable, backtestable question, not a guess.</p>
+          <div class="why"><span class="tag">Why it matters</span>Treating "gaps always fill" or "gaps always run" as a rule without testing it on real data is the same mistake as trusting an unvalidated confirmation filter &mdash; you already know how that turned out for NVDA.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">The same lesson, shorter timeframe</p>
+          <h3>Volume as Confirmation</h3>
+          <p class="def">A breakout or reversal on unusually low volume is far more likely to fail than one backed by real participation &mdash; the identical principle from your whipsaw discussion, just playing out over minutes instead of days.</p>
+          <div class="why"><span class="tag">Why it matters</span>This is literally the <code class="inline">volume_ratio</code> feature already sitting in <code class="inline">indicators.py</code> &mdash; the same logic applies intraday, just on a shorter rolling window.</div>
+        </div>
+      </section>
+
+      <!-- ================= IV. IB LINKAGES ================= -->
+      <section id="sec-4" class="chapter">
+        <h2><span class="num">IV.</span> Where Investment Banking Meets Day Trading</h2>
+        <p class="section-note">Most of what actually moves a stock intraday originates from corporate finance and IB-adjacent activity, not from trading desks. Knowing this activity means knowing your catalysts.</p>
+
+        <div class="entry">
+          <p class="eyebrow">The biggest reliable catalyst</p>
+          <h3>Corporate Actions</h3>
+          <p class="def">Earnings releases, guidance updates, buyback announcements, and stock splits are the single largest, most reliable source of intraday volatility &mdash; and every one of them originates from a company's corporate finance activity (often advised by investment banks on disclosure, capital structure, and timing), not from trading desks.</p>
+          <div class="why"><span class="tag">Why it matters</span>An earnings calendar is arguably a more useful daily checklist for a day trader than any single chart pattern.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Pure price discovery</p>
+          <h3>IPOs &amp; Underwriting</h3>
+          <p class="def">When a company goes public, investment banks price and underwrite the offering, determining initial share allocation and the opening price. IPO-day trading is famously volatile precisely because there's no trading history yet &mdash; no VWAP, no support/resistance, none of Chapter III's tools have anything to anchor to.</p>
+          <div class="why"><span class="tag">Why it matters</span>Recognize IPO-day trading as a fundamentally different, higher-risk activity than trading an established stock &mdash; the usual toolkit doesn't fully apply yet.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">A direct, tradable catalyst</p>
+          <h3>Analyst Ratings &amp; Price Targets</h3>
+          <p class="def">Equity research analysts (a core IB-adjacent function) publish buy/hold/sell ratings and price targets. An upgrade or downgrade, especially from a major bank, routinely moves a stock several percent within minutes of release.</p>
+          <div class="why"><span class="tag">Why it matters</span>This is a scheduled-ish, trackable catalyst &mdash; unlike most news, you can at least know which stocks have upcoming analyst days or ratings due for review.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Deal-driven volatility</p>
+          <h3>M&amp;A Announcements</h3>
+          <p class="def">When one company announces it's acquiring another, the target's stock typically jumps toward &mdash; but usually just under &mdash; the offer price, while the acquirer's stock often dips. That gap between deal price and trading price is what merger-arbitrage funds trade professionally, a direct descendant of IB M&amp;A advisory work showing up as a tradable, if specialized, pattern.</p>
+          <div class="why"><span class="tag">Why it matters</span>Worth knowing this exists even if you never trade it &mdash; it explains otherwise-confusing price action in acquisition targets and acquirers alike.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Who's actually on the other side</p>
+          <h3>Market Microstructure &amp; Order Flow</h3>
+          <p class="def">Sell-side trading desks and market makers are the actual counterparties providing the liquidity that makes the bid-ask spread and slippage from Chapter II possible at all. A market order is filled by a real desk on the other side, not by magic &mdash; which is exactly why liquid large-caps trade so differently from thin microcaps.</p>
+          <div class="why"><span class="tag">Why it matters</span>Explains why the same strategy can behave completely differently on a $2B-volume stock versus a $2M-volume one.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Watched by everyone, for the same reason</p>
+          <h3>The Macro Calendar</h3>
+          <p class="def">Fed rate decisions (FOMC), CPI inflation prints, and the monthly jobs report (NFP) are watched with equal intensity by IB macro strategy desks and retail day traders, because they can move the entire market in the seconds after release.</p>
+          <div class="why"><span class="tag">Why it matters</span>Worth having on a calendar regardless of what you personally trade &mdash; these are the days volatility spikes market-wide, not just in one name.</div>
+        </div>
+      </section>
+
+      <!-- ================= V. WHAT TO WATCH OUT FOR ================= -->
+      <section id="sec-5" class="chapter">
+        <h2><span class="num">V.</span> What to Watch Out For</h2>
+        <p class="section-note">The honest numbers, the common ways accounts actually blow up, and the scams built specifically to target people learning this.</p>
+
+        <div class="entry">
+          <p class="eyebrow">Read before Chapter VI</p>
+          <h3>The Honest Statistics</h3>
+          <p class="def">Independent studies vary in exact numbers but agree on the shape: <b>FINRA's 2020 study found 72% of day traders ended the year in a financial deficit.</b> A widely-cited study following 1,600 Brazilian day traders for over a year found <b>only 3% turned a profit.</b> A 14-year study tracking over 360,000 individual traders found only <b>13% were still trading after 3 years, fewer than 7% by year 5, and only about 1% were able to consistently beat the market.</b></p>
+          <figure class="diagram">
+            <svg viewBox="0 0 560 230" role="img" aria-labelledby="funnel-title">
+              <title id="funnel-title">Funnel chart of day trader survival and success rates over time</title>
+              <g font-family="var(--font-mono)" font-size="11">
+                <rect x="40"  y="20"  width="480" height="34" fill="var(--chart-amber)" opacity="1.0" rx="3"/>
+                <text x="60" y="42" fill="var(--paper)">100% start day trading</text>
+                <rect x="90"  y="70"  width="380" height="34" fill="var(--chart-amber)" opacity="0.75" rx="3"/>
+                <text x="110" y="92" fill="var(--paper)">13% still trading after 3 years</text>
+                <rect x="140" y="120" width="280" height="34" fill="var(--chart-amber)" opacity="0.55" rx="3"/>
+                <text x="160" y="142" fill="var(--ink)">7% still active by year 5</text>
+                <rect x="200" y="170" width="160" height="34" fill="var(--chart-amber)" opacity="0.9" rx="3"/>
+                <text x="215" y="192" fill="var(--paper)">~1% consistently profitable</text>
+              </g>
+            </svg>
+            <figcaption>Based on a 14-year study of 360,000+ traders (see sources below) &mdash; consistent with FINRA and independent academic findings.</figcaption>
+          </figure>
+          <div class="why"><span class="tag">Why it matters</span>This isn't a reason to avoid learning &mdash; it's the reason Chapter I exists, and the reason a demo account before real money is the correct order of operations you already chose.</div>
+          <p class="source">Sources: FINRA (2020); "Day Trading for a Living?" (Brazilian day trader study); 14-year, 360k-trader longitudinal study &mdash; see footer for links.</p>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">The most common account-killer</p>
+          <h3>Overleveraging</h3>
+          <p class="def">Using more borrowed buying power than your Chapter I risk plan allows, "just this once," on a high-conviction trade. This is the single most common way a good month turns into a bad year.</p>
+          <div class="why"><span class="tag">Why it matters</span>The exception you make once becomes the rule you default to under stress &mdash; the plan only works if it has zero exceptions.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">A psychological trap, not a strategy</p>
+          <h3>Revenge Trading</h3>
+          <p class="def">Trying to immediately win back a loss with a bigger, less-planned trade. It's an emotional response, not a decision &mdash; specifically what Chapter I's max daily loss limit exists to prevent as a hard rule rather than a suggestion.</p>
+          <div class="why"><span class="tag">Why it matters</span>This single behavior pattern is disproportionately responsible for the worst days in most losing traders' histories.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Recognize the setup</p>
+          <h3>Pump-and-Dump Schemes</h3>
+          <p class="def">Coordinated promotion of a thinly-traded, often microcap, stock to inflate its price, followed by the promoters selling into the hype they created. Watch for sudden social-media buzz with no real underlying news, on a stock with very low average volume &mdash; exactly the conditions that make manipulation easy and hard to detect from inside the hype.</p>
+          <div class="why"><span class="tag">Why it matters</span>This is one of the few areas where "if it looks too good to be true" is close to a reliable rule.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Follow the incentive</p>
+          <h3>Paid Signal Services &amp; "Gurus"</h3>
+          <p class="def">Anyone selling guaranteed win-rate signals or a "secret indicator" is, at minimum, not backing the claim with real audited results, and at worst is monetizing you rather than the market. A legitimate track record is independently verifiable and comes with the same honest loss statistics as everyone else's.</p>
+          <div class="why"><span class="tag">Why it matters</span>If someone had a truly reliable edge, selling a $99 course would be a strange way to monetize it &mdash; ask what their actual incentive is.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Easy to overlook, real cost</p>
+          <h3>Taxes &mdash; Short-Term Gains &amp; Wash Sales</h3>
+          <p class="def">Profits on positions held under a year are taxed as ordinary income, not the lower long-term capital gains rate &mdash; a real cost that changes a strategy's true profitability. The wash-sale rule also disallows claiming a loss for tax purposes if you buy back the same or a "substantially identical" security within a 61-day window around the sale (30 days before, the sale day, 30 days after).</p>
+          <div class="why"><span class="tag">Why it matters</span>Easy to accidentally trigger a wash sale by re-entering a stock you just sold at a loss because your setup fired again &mdash; worth checking before you assume a loss is deductible.</div>
+          <p class="source">Sources: IRS trade-date rules; Fidelity/Schwab wash-sale guides (see footer).</p>
+        </div>
+      </section>
+
+      <!-- ================= VI. AI CO-PILOT ================= -->
+      <section id="sec-6" class="chapter">
+        <h2><span class="num">VI.</span> Using AI as a Trading Co-Pilot (Not an Autopilot)</h2>
+        <p class="section-note">Answering directly: yes, AI can help &mdash; here's specifically how, and just as importantly, how it can't.</p>
+
+        <div class="entry">
+          <p class="eyebrow">The real strengths</p>
+          <h3>What AI Is Actually Good At</h3>
+          <p class="def">Processing far more indicators across far more tickers, far faster, than a human watching charts manually. Running the kind of rigorous backtesting and walk-forward validation already built for the Stock Analysis Agent, which catches an overfit "edge" before it costs real money. And journaling/reviewing your own trades afterward to surface behavioral patterns you can't see while you're inside them &mdash; an unbiased log finds "you consistently exit winners early and let losers run" far faster than memory does.</p>
+          <div class="why"><span class="tag">Why it matters</span>These are exactly the categories of work that are tedious and error-prone for a human to do consistently, and that's precisely where AI adds real value rather than hype.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">The real limits</p>
+          <h3>What AI Cannot Do</h3>
+          <p class="def">Predict a genuinely unpredictable event &mdash; a surprise headline, a flash crash. Guarantee that a backtested edge keeps working going forward &mdash; you already proved this yourself with the NVDA walk-forward result, where a rule that looked fine in one window failed in the next. Or replace the discipline in Chapter I. A confident, articulate AI output is not the same thing as a correct one.</p>
+          <div class="why"><span class="tag">Why it matters</span>The NVDA result wasn't a fluke or a bug &mdash; it's the general case. Treat every backtested rule, including future ones, with the same skepticism.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">The version worth building</p>
+          <h3>The Responsible Design: A Trading Discipline Co-Pilot</h3>
+          <p class="def">The genuinely useful, responsible version of an AI trading agent does not place trades autonomously &mdash; it keeps a human in the loop for execution, the same principle professional systematic trading firms build in via kill switches and oversight, not just a retail-specific caution. What it <i>does</i> handle: scanning your watchlist against your own validated rules and flagging matches; tracking open positions against your own stop-loss and target levels and alerting you; and reviewing your trade log afterward for the behavioral leaks that actually determine most traders' results.</p>
+          <div class="why"><span class="tag">Why it matters</span>This isn't a new project &mdash; it's a direct extension of the Stock Analysis Agent and <code class="inline">drift_check.py</code> already sitting in your repo. The infrastructure already exists; it just needs a discipline layer and an alerting layer on top.</div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <footer class="colophon">
+    <h4>Sources</h4>
+    <ul>
+      <li>SEC / FINRA Rule 4210 amendments eliminating the $25,000 Pattern Day Trader minimum, effective June 4, 2026 &mdash; sec.gov, finra.org</li>
+      <li>T+1 settlement rule, effective May 28, 2024 &mdash; SEC</li>
+      <li>Wash-sale rule guidance &mdash; IRS Publication 550; Fidelity and Schwab investor education pages</li>
+      <li>FINRA (2020) study on day trader account performance</li>
+      <li>Barber, Lee, Liu &amp; Odean et al. &mdash; Brazilian day trader study ("Do Day Traders Rationally Learn About Their Ability?")</li>
+      <li>14-year, 360,000+ trader longitudinal study on day trader survival and consistent profitability rates</li>
+    </ul>
+    <p>Companion to your <a href="#">concept reference doc</a> and the Stock Analysis Agent in <code class="inline">finance-business-portfolio/agent/</code>. Forex and commodities manuals to follow as their own documents.</p>
+  </footer>
+</div>
