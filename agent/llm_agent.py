@@ -93,8 +93,14 @@ def run_agent(user_message: str, max_turns: int = 6) -> str:
 
 
 if __name__ == "__main__":
-    question = "What's your current read on NVDA -- is this a buy, sell, or hold right now, and why?"
-    print(f"Question: {question}\n")
+    print("=== Stock Analysis Agent ===")
+    print("(Analysis only -- it never places trades. Press Ctrl+C to quit.)\n")
+
+    ticker = input("Ticker to analyze [NVDA]: ").strip().upper() or "NVDA"
+    default_question = f"What's your current read on {ticker} -- is this a buy, sell, or hold right now, and why?"
+    question = input(f"Question [{default_question}]: ").strip() or default_question
+
+    print(f"\nQuestion: {question}\n")
     answer = run_agent(question)
     print("\n=== Agent's Answer ===\n")
     print(answer)
