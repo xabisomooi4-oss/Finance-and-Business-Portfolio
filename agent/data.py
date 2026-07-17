@@ -19,6 +19,14 @@ def get_price_history(ticker: str, period: str = "2y") -> pd.DataFrame:
         df.columns = df.columns.get_level_values(0)
 
     df = df.dropna()
+
+    if df.empty:
+        raise RuntimeError(
+            f"yfinance returned no data for '{ticker}' (period={period}). "
+            "This is usually a transient Yahoo Finance hiccup -- wait a moment and retry. "
+            "If it persists, check that the ticker symbol is correct."
+        )
+
     return df
 
 

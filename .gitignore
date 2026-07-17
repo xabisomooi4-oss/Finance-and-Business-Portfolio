@@ -1,6 +1,10 @@
 .DS_Store
 .env
 .env.local
+*api*key*
+*API*Key*
+*secret*
+*.pem
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
