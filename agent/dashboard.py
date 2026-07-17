@@ -10,8 +10,10 @@ from plotly.subplots import make_subplots
 
 from backtest import prepare_data, run_backtest, buy_and_hold_return_pct
 from drift_check import check_drift
-from llm_agent import run_agent
+from llm_agent import run_agent, run_agent_chat
 from tools import DEFAULT_WATCHLIST
+
+MOOVER_AVATAR = "\U0001F30A"  # 🌊
 
 # Dark "trading terminal" palette -- validated for contrast/CVD-safety
 # against this exact dark surface (see dataviz skill's validate_palette.js).
@@ -166,3 +168,43 @@ if scan:
     st.markdown(safe_tier_answer)
 else:
     st.info("Click **Scan Watchlist with Agent** to get a ranked tier list across these tickers.")
+
+# --- Moover chat ---
+st.divider()
+st.subheader(f"{MOOVER_AVATAR} Ask Moover")
+st.caption(
+    "Moover uses the exact same tools and rules as the Agent above -- grounded in real data, "
+    "always honest about buy-and-hold comparisons and low confidence. Not a different, looser AI."
+)
+
+if "moover_display_history" not in st.session_state:
+    st.session_state.moover_display_history = []
+if "moover_raw_history" not in st.session_state:
+    st.session_state.moover_raw_history = []
+
+for msg in st.session_state.moover_display_history:
+    avatar = MOOVER_AVATAR if msg["role"] == "assistant" else None
+    with st.chat_message(msg["role"], avatar=avatar):
+        st.markdown(msg["content"].replace("$", "\\$").replace("~", "\\~"))
+
+user_input = st.chat_input("Ask Moover about a ticker, a signal, or the strategy...")
+
+if user_input:
+    st.session_state.moover_display_history.append({"role": "user", "content": user_input})
+    with st.chat_message("user"):
+        st.markdown(user_input)
+
+    chat_log = st.expander("Tool calls made by Moover", expanded=False)
+
+    def log_chat_tool_call(name, inputs):
+        chat_log.write(f"`{name}({inputs})`")
+
+    with st.chat_message("assistant", avatar=MOOVER_AVATAR):
+        with st.spinner("Moover is thinking..."):
+            answer, updated_history = run_agent_chat(
+                st.session_state.moover_raw_history, user_input, on_tool_call=log_chat_tool_call,
+            )
+        st.markdown(answer.replace("$", "\\$").replace("~", "\\~"))
+
+    st.session_state.moover_raw_history = updated_history
+    st.session_state.moover_display_history.append({"role": "assistant", "content": answer})

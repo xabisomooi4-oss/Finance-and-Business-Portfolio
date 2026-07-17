@@ -54,12 +54,10 @@ limitations, not details to gloss over.
 """
 
 
-def run_agent(user_message: str, max_turns: int = 6, on_tool_call=None) -> str:
-    """on_tool_call(name, inputs), if given, is called for every tool the
-    Agent invokes -- lets a caller (e.g. the dashboard) display tool calls
-    live instead of only printing to stdout."""
+def _run_loop(messages: list, max_turns: int, on_tool_call=None) -> tuple[str, list]:
+    """Shared agent loop. Mutates and returns `messages` so multi-turn
+    callers (the chat panel) can carry conversation state across calls."""
     client = Anthropic()
-    messages = [{"role": "user", "content": user_message}]
 
     for _ in range(max_turns):
         response = client.messages.create(
@@ -76,7 +74,8 @@ def run_agent(user_message: str, max_turns: int = 6, on_tool_call=None) -> str:
             print("  [warning] response was cut off by the token limit -- consider raising max_tokens further")
 
         if response.stop_reason != "tool_use":
-            return "".join(block.text for block in response.content if block.type == "text")
+            answer = "".join(block.text for block in response.content if block.type == "text")
+            return answer, messages
 
         tool_results = []
         for block in response.content:
@@ -100,7 +99,24 @@ def run_agent(user_message: str, max_turns: int = 6, on_tool_call=None) -> str:
 
         messages.append({"role": "user", "content": tool_results})
 
-    return "(Stopped after max_turns without a final answer -- inspect the transcript.)"
+    return "(Stopped after max_turns without a final answer -- inspect the transcript.)", messages
+
+
+def run_agent(user_message: str, max_turns: int = 6, on_tool_call=None) -> str:
+    """Single-shot question, no conversation memory. Used by the single-ticker
+    and watchlist-scan flows, which don't need multi-turn context."""
+    answer, _ = _run_loop([{"role": "user", "content": user_message}], max_turns, on_tool_call)
+    return answer
+
+
+def run_agent_chat(history: list, user_message: str, max_turns: int = 6, on_tool_call=None) -> tuple[str, list]:
+    """Multi-turn version for the chat panel: takes the prior raw message
+    history (as previously returned by this function), appends the new user
+    message, and returns (answer, updated_history) so the caller can persist
+    it across turns."""
+    messages = list(history)
+    messages.append({"role": "user", "content": user_message})
+    return _run_loop(messages, max_turns, on_tool_call)
 
 
 if __name__ == "__main__":
