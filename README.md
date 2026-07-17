@@ -12,7 +12,7 @@ This repo is the single link referenced on my resume and applications.
 
 - [`docs/concept-reference.html`](docs/concept-reference.html) — a glossary of every concept behind these three projects, with diagrams. Open it directly in a browser.
 - [`docs/day-trading-field-manual.html`](docs/day-trading-field-manual.html) — risk management, execution mechanics, IB-linked catalysts, honest survival statistics, and where AI genuinely helps in day trading.
-- `agent/` — Stock Analysis Agent, currently a swing-trading (20/50-day MA, RSI, MACD) signal engine for NVDA, with a backtester and walk-forward validation
+- `agent/` — Stock Analysis Agent: a swing-trading (20/50-day MA, RSI) signal engine with backtesting, walk-forward validation, and a drift check, wrapped in an LLM reasoning layer (`llm_agent.py`) that calls these as tools and produces a written entry/exit call. Analysis only -- it never places trades.
 - `valuation-model/` — Stock Valuation Model *(coming soon)*
 - `portfolio-backtesting/` — Portfolio Analysis & Backtesting Model *(coming soon)*
 
