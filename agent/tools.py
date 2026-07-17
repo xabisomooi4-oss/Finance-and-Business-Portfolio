@@ -15,6 +15,8 @@ from indicators import (
 from backtest import prepare_data, run_backtest, buy_and_hold_return_pct
 from drift_check import check_drift
 
+DEFAULT_WATCHLIST = ["NVDA", "AAPL", "MSFT", "TSLA", "AMD", "GOOGL"]
+
 
 def _clean(value):
     """Recursively convert numpy/pandas types to plain Python so results are
@@ -140,6 +142,37 @@ def tool_get_drift_status(ticker: str, period: str = "5y", recent_window_days: i
     return _clean(result)
 
 
+def tool_scan_watchlist(tickers: list = None) -> list:
+    """Compact signal + backtest snapshot for several tickers at once, done
+    as one fast local pass (not one LLM tool call per ticker) so ranking a
+    watchlist doesn't require dozens of round trips. Use this before
+    producing any kind of ranked list or "best trades" summary."""
+    if not tickers:
+        tickers = DEFAULT_WATCHLIST
+
+    results = []
+    for t in tickers:
+        try:
+            df = prepare_data(t, period="1y")
+            latest = df.iloc[-1]
+            bt = run_backtest(df)
+            bh = buy_and_hold_return_pct(df)
+            results.append(_clean({
+                "ticker": t.upper(),
+                "close": latest["Close"],
+                "rsi_14": latest["RSI_14"],
+                "ma_spread_pct": latest["ma_spread_pct"],
+                "trend_persistence_days": latest["trend_persistence"],
+                "golden_cross_today": latest["golden_cross"],
+                "death_cross_today": latest["death_cross"],
+                "backtest_sharpe_1y": bt["sharpe_ratio"],
+                "backtest_vs_buy_hold_pts_1y": round(bt["total_return_pct"] - bh, 2),
+            }))
+        except Exception as e:
+            results.append({"ticker": t.upper(), "error": str(e)})
+    return results
+
+
 def tool_get_recent_news(ticker: str, max_articles: int = 8) -> list:
     """Recent headlines for a ticker (via yfinance, no separate API key
     needed) -- lets the Agent factor in real catalysts (earnings, guidance,
@@ -209,6 +242,17 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "scan_watchlist",
+        "description": "Get a compact signal + backtest snapshot for several tickers at once in a single call. Always call this first when asked to rank, compare, or produce a tier list / best-trades summary across multiple stocks -- do not call get_current_signal repeatedly for that instead.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "tickers": {"type": "array", "items": {"type": "string"}, "description": "List of ticker symbols. Omit to use the default watchlist."},
+            },
+            "required": [],
+        },
+    },
+    {
         "name": "get_recent_news",
         "description": "Get recent real headlines for a ticker (earnings, guidance, analyst ratings, macro news). Use this to check for a concrete catalyst behind a technical move, or to flag upcoming events (like an earnings date) that could invalidate a purely technical read.",
         "input_schema": {
@@ -228,4 +272,5 @@ TOOL_DISPATCH = {
     "get_backtest_summary": tool_get_backtest_summary,
     "get_drift_status": tool_get_drift_status,
     "get_recent_news": tool_get_recent_news,
+    "scan_watchlist": tool_scan_watchlist,
 }

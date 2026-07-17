@@ -11,6 +11,7 @@ from plotly.subplots import make_subplots
 from backtest import prepare_data, run_backtest, buy_and_hold_return_pct
 from drift_check import check_drift
 from llm_agent import run_agent
+from tools import DEFAULT_WATCHLIST
 
 # Dark "trading terminal" palette -- validated for contrast/CVD-safety
 # against this exact dark surface (see dataviz skill's validate_palette.js).
@@ -128,3 +129,40 @@ if analyze:
     st.markdown(safe_answer)
 else:
     st.info("Click **Analyze with Agent** above to get its full written reasoning for this ticker.")
+
+# --- Watchlist tier list ---
+st.divider()
+st.subheader("\U0001F4CB Watchlist Tier List")
+st.caption(
+    "Ranked from real technical + backtest data across your watchlist — not a guarantee. "
+    "See Chapter V of the Day Trading Field Manual for why."
+)
+
+watchlist_input = st.text_input(
+    "Watchlist (comma-separated tickers)",
+    value=", ".join(DEFAULT_WATCHLIST),
+)
+scan = st.button("Scan Watchlist with Agent", use_container_width=True)
+
+if scan:
+    tickers = [t.strip().upper() for t in watchlist_input.split(",") if t.strip()]
+    tier_log = st.expander("Tool calls made by the Agent", expanded=False)
+
+    def log_tier_tool_call(name, inputs):
+        tier_log.write(f"`{name}({inputs})`")
+
+    with st.spinner(f"Agent is scanning {len(tickers)} tickers..."):
+        tier_question = (
+            f"Scan this watchlist using scan_watchlist: {', '.join(tickers)}. "
+            "Then produce a ranked tier list: Tier 1 = strongest confirmed setups right now, "
+            "Tier 2 = has potential but not yet confirmed, Tier 3 = avoid or watch cautiously. "
+            "For your top 1-2 picks, also check recent news and drift status before finalizing. "
+            "Give a one-line reason for each ticker's tier placement, grounded in the actual numbers -- "
+            "and say plainly if nothing in the watchlist looks like a strong setup right now."
+        )
+        tier_answer = run_agent(tier_question, on_tool_call=log_tier_tool_call)
+
+    safe_tier_answer = tier_answer.replace("$", "\\$").replace("~", "\\~")
+    st.markdown(safe_tier_answer)
+else:
+    st.info("Click **Scan Watchlist with Agent** to get a ranked tier list across these tickers.")
