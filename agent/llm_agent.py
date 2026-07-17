@@ -49,7 +49,10 @@ limitations, not details to gloss over.
 """
 
 
-def run_agent(user_message: str, max_turns: int = 6) -> str:
+def run_agent(user_message: str, max_turns: int = 6, on_tool_call=None) -> str:
+    """on_tool_call(name, inputs), if given, is called for every tool the
+    Agent invokes -- lets a caller (e.g. the dashboard) display tool calls
+    live instead of only printing to stdout."""
     client = Anthropic()
     messages = [{"role": "user", "content": user_message}]
 
@@ -74,7 +77,10 @@ def run_agent(user_message: str, max_turns: int = 6) -> str:
         for block in response.content:
             if block.type != "tool_use":
                 continue
-            print(f"  [tool call] {block.name}({block.input})")
+            if on_tool_call:
+                on_tool_call(block.name, block.input)
+            else:
+                print(f"  [tool call] {block.name}({block.input})")
             fn = TOOL_DISPATCH[block.name]
             try:
                 result = fn(**block.input)
