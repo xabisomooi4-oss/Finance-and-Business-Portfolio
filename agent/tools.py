@@ -5,6 +5,7 @@ Agent never invents numbers, it only reasons over what these return.
 
 import numpy as np
 import pandas as pd
+import yfinance as yf
 
 from data import get_price_history
 from indicators import (
@@ -139,6 +140,23 @@ def tool_get_drift_status(ticker: str, period: str = "5y", recent_window_days: i
     return _clean(result)
 
 
+def tool_get_recent_news(ticker: str, max_articles: int = 8) -> list:
+    """Recent headlines for a ticker (via yfinance, no separate API key
+    needed) -- lets the Agent factor in real catalysts (earnings, guidance,
+    analyst moves, macro news) instead of reasoning on price alone."""
+    articles = yf.Ticker(ticker).news or []
+    results = []
+    for a in articles[:max_articles]:
+        content = a.get("content", a)  # yfinance nests fields under "content"
+        results.append(_clean({
+            "title": content.get("title"),
+            "publisher": (content.get("provider") or {}).get("displayName"),
+            "published": content.get("pubDate"),
+            "summary": content.get("summary"),
+        }))
+    return results
+
+
 TOOL_DEFINITIONS = [
     {
         "name": "get_current_signal",
@@ -190,6 +208,18 @@ TOOL_DEFINITIONS = [
             "required": ["ticker"],
         },
     },
+    {
+        "name": "get_recent_news",
+        "description": "Get recent real headlines for a ticker (earnings, guidance, analyst ratings, macro news). Use this to check for a concrete catalyst behind a technical move, or to flag upcoming events (like an earnings date) that could invalidate a purely technical read.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "ticker": {"type": "string"},
+                "max_articles": {"type": "integer", "description": "Default 8."},
+            },
+            "required": ["ticker"],
+        },
+    },
 ]
 
 TOOL_DISPATCH = {
@@ -197,4 +227,5 @@ TOOL_DISPATCH = {
     "get_recent_crossovers": tool_get_recent_crossovers,
     "get_backtest_summary": tool_get_backtest_summary,
     "get_drift_status": tool_get_drift_status,
+    "get_recent_news": tool_get_recent_news,
 }
