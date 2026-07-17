@@ -13,7 +13,7 @@ from drift_check import check_drift
 from llm_agent import run_agent, run_agent_chat
 from tools import DEFAULT_WATCHLIST
 
-MOOVER_AVATAR = "\U0001F30A"  # 🌊
+MOOVER_AVATAR = "\U0001F402"  # 🐂 bull -- "Moover" as in market mover / bull market
 
 # Dark "trading terminal" palette -- validated for contrast/CVD-safety
 # against this exact dark surface (see dataviz skill's validate_palette.js).
@@ -169,42 +169,92 @@ if scan:
 else:
     st.info("Click **Scan Watchlist with Agent** to get a ranked tier list across these tickers.")
 
-# --- Moover chat ---
-st.divider()
-st.subheader(f"{MOOVER_AVATAR} Ask Moover")
-st.caption(
-    "Moover uses the exact same tools and rules as the Agent above -- grounded in real data, "
-    "always honest about buy-and-hold comparisons and low confidence. Not a different, looser AI."
+# --- Moover: a floating chat bubble, not a static page section ---
+# Built as a manually-toggled panel (not st.popover) -- Streamlit's popover
+# positions its panel relative to document flow, which conflicts with the
+# launcher button also being position:fixed. A plain session_state toggle
+# gives full control over both the button and the panel's positioning.
+MOOVER_GREETING = (
+    "Hey, I'm Moover! \U0001F402 I can check a ticker's technical signal, backtest it "
+    "against buy-and-hold, flag if its edge is drifting, pull recent news, or rank your "
+    "whole watchlist. Ask me anything -- e.g. *\"what's AAPL's RSI?\"* or *\"is now a good "
+    "time to buy TSLA?\"*"
+)
+
+st.markdown(
+    """
+    <style>
+    @keyframes moover-charge {
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        20%      { transform: translateY(-2px) rotate(-10deg); }
+        40%      { transform: translateY(-7px) rotate(6deg); }
+        60%      { transform: translateY(-2px) rotate(-6deg); }
+        80%      { transform: translateY(-4px) rotate(4deg); }
+    }
+    @keyframes moover-glow {
+        0%, 100% { box-shadow: 0 4px 16px rgba(59,130,246,0.35); }
+        50%      { box-shadow: 0 4px 24px rgba(59,130,246,0.7); }
+    }
+    .st-key-moover_launcher { position: fixed !important; bottom: 24px; right: 24px; z-index: 999; width: fit-content !important; left: auto !important; }
+    .st-key-moover_launcher button { border-radius: 50%; width: 60px; height: 60px; font-size: 1.6rem;
+        animation: moover-charge 2.8s ease-in-out infinite, moover-glow 2.8s ease-in-out infinite; }
+    .st-key-moover_launcher button:hover { animation-play-state: paused; transform: scale(1.1); }
+
+    .st-key-moover_panel { position: fixed !important; bottom: 96px; right: 24px; z-index: 998;
+        width: 380px !important; max-height: 70vh; overflow-y: auto;
+        background: #131A24; border: 1px solid #232C3A; border-radius: 12px;
+        padding: 1rem; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
 if "moover_display_history" not in st.session_state:
     st.session_state.moover_display_history = []
 if "moover_raw_history" not in st.session_state:
     st.session_state.moover_raw_history = []
+if "moover_open" not in st.session_state:
+    st.session_state.moover_open = False
 
-for msg in st.session_state.moover_display_history:
-    avatar = MOOVER_AVATAR if msg["role"] == "assistant" else None
-    with st.chat_message(msg["role"], avatar=avatar):
-        st.markdown(msg["content"].replace("$", "\\$").replace("~", "\\~"))
+launcher_box = st.container(key="moover_launcher")
+with launcher_box:
+    if st.button(MOOVER_AVATAR, key="moover_toggle"):
+        st.session_state.moover_open = not st.session_state.moover_open
+        st.rerun()
 
-user_input = st.chat_input("Ask Moover about a ticker, a signal, or the strategy...")
+if st.session_state.moover_open:
+    panel_box = st.container(key="moover_panel")
+    with panel_box:
+        st.markdown(f"**{MOOVER_AVATAR} Moover**")
+        st.caption("Same tools and honesty rules as the Agent above -- not a different, looser AI.")
 
-if user_input:
-    st.session_state.moover_display_history.append({"role": "user", "content": user_input})
-    with st.chat_message("user"):
-        st.markdown(user_input)
+        if not st.session_state.moover_display_history:
+            with st.chat_message("assistant", avatar=MOOVER_AVATAR):
+                st.markdown(MOOVER_GREETING)
 
-    chat_log = st.expander("Tool calls made by Moover", expanded=False)
+        for msg in st.session_state.moover_display_history:
+            avatar = MOOVER_AVATAR if msg["role"] == "assistant" else None
+            with st.chat_message(msg["role"], avatar=avatar):
+                st.markdown(msg["content"].replace("$", "\\$").replace("~", "\\~"))
 
-    def log_chat_tool_call(name, inputs):
-        chat_log.write(f"`{name}({inputs})`")
+        user_input = st.chat_input("Ask Moover...")
 
-    with st.chat_message("assistant", avatar=MOOVER_AVATAR):
-        with st.spinner("Moover is thinking..."):
-            answer, updated_history = run_agent_chat(
-                st.session_state.moover_raw_history, user_input, on_tool_call=log_chat_tool_call,
-            )
-        st.markdown(answer.replace("$", "\\$").replace("~", "\\~"))
+        if user_input:
+            st.session_state.moover_display_history.append({"role": "user", "content": user_input})
+            with st.chat_message("user"):
+                st.markdown(user_input)
 
-    st.session_state.moover_raw_history = updated_history
-    st.session_state.moover_display_history.append({"role": "assistant", "content": answer})
+            chat_log = st.expander("Tool calls made by Moover", expanded=False)
+
+            def log_chat_tool_call(name, inputs):
+                chat_log.write(f"`{name}({inputs})`")
+
+            with st.chat_message("assistant", avatar=MOOVER_AVATAR):
+                with st.spinner("Moover is thinking..."):
+                    answer, updated_history = run_agent_chat(
+                        st.session_state.moover_raw_history, user_input, on_tool_call=log_chat_tool_call,
+                    )
+                st.markdown(answer.replace("$", "\\$").replace("~", "\\~"))
+
+            st.session_state.moover_raw_history = updated_history
+            st.session_state.moover_display_history.append({"role": "assistant", "content": answer})
