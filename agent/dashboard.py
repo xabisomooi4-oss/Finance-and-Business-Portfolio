@@ -12,14 +12,18 @@ from backtest import prepare_data, run_backtest, buy_and_hold_return_pct
 from drift_check import check_drift
 from llm_agent import run_agent
 
-# Same palette used across the concept-reference and day-trading docs, so
-# this dashboard reads as part of the same project rather than a bolt-on.
-AMBER = "#B8791E"
-BLUE = "#1F6FA6"
-PLUM = "#8A3F7A"
-GAIN = "#2F8F5B"
-LOSS = "#C1402E"
-MUTED = "#8A9297"
+# Dark "trading terminal" palette -- validated for contrast/CVD-safety
+# against this exact dark surface (see dataviz skill's validate_palette.js).
+# Red/green are reserved specifically for bullish/bearish trend meaning,
+# never used decoratively elsewhere.
+SURFACE = "#0A0E14"
+CARD = "#131A24"
+BLUE = "#3B82F6"       # primary accent -- MA20, UI
+BLUE_SLATE = "#4E7FBE"  # secondary -- MA50
+GAIN = "#2FAE72"        # bullish: golden cross, oversold band, uptrend
+LOSS = "#EF4444"        # bearish: death cross, overbought band, downtrend
+MUTED = "#5C6B7A"       # price line, gridlines, non-signal ink
+TEXT = "#E8EDF2"
 
 st.set_page_config(page_title="Stock Analysis Agent", page_icon="\U0001F4C8", layout="wide")
 
@@ -56,8 +60,8 @@ c4.metric("Trend Persistence", trend_label)
 fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.7, 0.3], vertical_spacing=0.06)
 
 fig.add_trace(go.Scatter(x=df.index, y=df["Close"], name="Close", line=dict(color=MUTED, width=1.5)), row=1, col=1)
-fig.add_trace(go.Scatter(x=df.index, y=df["MA_20"], name="MA 20", line=dict(color=AMBER, width=2)), row=1, col=1)
-fig.add_trace(go.Scatter(x=df.index, y=df["MA_50"], name="MA 50", line=dict(color=BLUE, width=2)), row=1, col=1)
+fig.add_trace(go.Scatter(x=df.index, y=df["MA_20"], name="MA 20", line=dict(color=BLUE, width=2)), row=1, col=1)
+fig.add_trace(go.Scatter(x=df.index, y=df["MA_50"], name="MA 50", line=dict(color=BLUE_SLATE, width=2)), row=1, col=1)
 
 golden = df[df["golden_cross"]]
 death = df[df["death_cross"]]
@@ -66,16 +70,20 @@ fig.add_trace(go.Scatter(x=golden.index, y=golden["Close"], mode="markers", name
 fig.add_trace(go.Scatter(x=death.index, y=death["Close"], mode="markers", name="Death Cross",
                           marker=dict(color=LOSS, size=11, symbol="triangle-down")), row=1, col=1)
 
-fig.add_trace(go.Scatter(x=df.index, y=df["RSI_14"], name="RSI (14)", line=dict(color=PLUM, width=1.5)), row=2, col=1)
+fig.add_trace(go.Scatter(x=df.index, y=df["RSI_14"], name="RSI (14)", line=dict(color=BLUE_SLATE, width=1.5)), row=2, col=1)
 fig.add_hline(y=70, line_dash="dot", line_color=LOSS, row=2, col=1)
 fig.add_hline(y=30, line_dash="dot", line_color=GAIN, row=2, col=1)
 fig.update_yaxes(range=[0, 100], row=2, col=1)
 
 fig.update_layout(
     height=560, margin=dict(l=10, r=10, t=10, b=10),
-    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0, font=dict(color=TEXT)),
     hovermode="x unified",
+    paper_bgcolor=SURFACE, plot_bgcolor=SURFACE,
+    font=dict(color=TEXT),
 )
+fig.update_xaxes(gridcolor=CARD, zerolinecolor=CARD)
+fig.update_yaxes(gridcolor=CARD, zerolinecolor=CARD)
 st.plotly_chart(fig, use_container_width=True)
 
 # --- Backtest vs. buy-and-hold + drift ---
