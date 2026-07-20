@@ -1,0 +1,269 @@
+<title>Sum-of-the-Parts &amp; AUM-Based Valuation</title>
+<style>
+  :root {
+    --paper: #F3F4F5; --card: #FBFBFC; --card-border: #E1E3E6;
+    --ink: #101214; --ink-2: #6B7075; --muted: #9BA0A5; --rule: #D8DBDE;
+    --accent: #101214; --accent-invert: #FFFFFF;
+    --shadow: 0 1px 2px rgba(16,18,20,0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0E0F11; --card: #17181A; --card-border: #2A2C2F;
+      --ink: #F0F1F2; --ink-2: #9BA0A5; --muted: #5A5E63; --rule: #2A2C2F;
+      --accent: #F0F1F2; --accent-invert: #0E0F11;
+      --shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0E0F11; --card: #17181A; --card-border: #2A2C2F;
+    --ink: #F0F1F2; --ink-2: #9BA0A5; --muted: #5A5E63; --rule: #2A2C2F;
+    --accent: #F0F1F2; --accent-invert: #0E0F11;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4);
+  }
+  :root[data-theme="light"] {
+    --paper: #F3F4F5; --card: #FBFBFC; --card-border: #E1E3E6;
+    --ink: #101214; --ink-2: #6B7075; --muted: #9BA0A5; --rule: #D8DBDE;
+    --accent: #101214; --accent-invert: #FFFFFF;
+    --shadow: 0 1px 2px rgba(16,18,20,0.06);
+  }
+
+  * { box-sizing: border-box; }
+  body { background: var(--paper); }
+
+  .doc {
+    --font-display: Didot, "Bodoni MT", "Playfair Display", Georgia, serif;
+    --font-body: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-mono: "SF Mono", Menlo, Consolas, monospace;
+    font-family: var(--font-body);
+    color: var(--ink);
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 3.5rem 1.5rem 5rem;
+    line-height: 1.55;
+  }
+  a { color: var(--ink); text-decoration-color: var(--muted); }
+
+  .kicker { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); margin: 0 0 1.1rem; }
+  .cover h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.08; letter-spacing: -0.01em; margin: 0 0 1rem; max-width: 20ch; }
+  .dek { font-size: 1.05rem; color: var(--ink-2); max-width: 62ch; margin: 0 0 1.6rem; font-weight: 300; }
+  .subject-line { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 0.6rem 0; margin: 0 0 2.6rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.4rem 1.5rem; }
+
+  .layout { display: grid; grid-template-columns: 216px minmax(0,1fr); gap: 3rem; align-items: start; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } .toc { position: static !important; } }
+
+  .toc { position: sticky; top: 2rem; }
+  .toc-label { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin: 0 0 0.7rem; }
+  .toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+  .toc a { text-decoration: none; color: var(--ink-2); font-size: 0.88rem; display: block; padding: 0.15rem 0 0.15rem 0.75rem; border-left: 1px solid var(--rule); }
+  .toc a:hover { color: var(--ink); border-left-color: var(--ink); }
+
+  section.chapter { margin-bottom: 3.4rem; scroll-margin-top: 1.5rem; }
+  .chapter .roman { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.14em; color: var(--muted); display: block; margin-bottom: 0.5rem; }
+  .chapter h2 { font-family: var(--font-display); font-weight: 400; font-size: 1.75rem; margin: 0 0 0.4rem; letter-spacing: -0.005em; }
+  .chapter .section-note { color: var(--ink-2); font-size: 0.94rem; margin: 0 0 1.8rem; max-width: 64ch; font-weight: 300; padding-bottom: 1.6rem; border-bottom: 1px solid var(--rule); }
+
+  .entry { padding: 1.5rem 0; border-top: 1px solid var(--rule); }
+  .entry:first-of-type { border-top: none; padding-top: 0; }
+  .entry .eyebrow { font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 0 0 0.4rem; }
+  .entry h3 { font-family: var(--font-display); font-weight: 400; font-size: 1.35rem; margin: 0 0 0.6rem; letter-spacing: -0.005em; }
+  .entry p.def { color: var(--ink-2); max-width: 66ch; margin: 0 0 0.9rem; font-size: 0.98rem; font-weight: 300; }
+  .entry p.def b { color: var(--ink); font-weight: 600; }
+  .entry .why { font-size: 0.9rem; color: var(--ink); border-left: 2px solid var(--ink); padding-left: 0.9rem; max-width: 62ch; }
+  .entry .why .tag { font-family: var(--font-mono); font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); display: block; margin-bottom: 0.25rem; }
+
+  figure.diagram { margin: 1.1rem 0 0.4rem; background: var(--card); border: 1px solid var(--card-border); padding: 1.3rem 1.4rem 1rem; box-shadow: var(--shadow); max-width: 680px; overflow-x: auto; }
+  figure.diagram svg { display: block; width: 100%; height: auto; }
+  figure.diagram figcaption { font-family: var(--font-mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--rule); }
+
+  .mono-num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+  code.inline { font-family: var(--font-mono); font-size: 0.86em; background: var(--card); border: 1px solid var(--card-border); padding: 0.05em 0.4em; }
+
+  .callout { background: var(--ink); color: var(--accent-invert); padding: 1.1rem 1.3rem; margin: 1.2rem 0; max-width: 66ch; }
+  .callout .tag { font-family: var(--font-mono); font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.7; display: block; margin-bottom: 0.35rem; }
+  .callout p { margin: 0; font-size: 0.95rem; font-weight: 300; }
+
+  footer.colophon { margin-top: 3.8rem; padding-top: 1.8rem; border-top: 1px solid var(--ink); font-size: 0.82rem; color: var(--muted); max-width: 74ch; font-family: var(--font-mono); }
+</style>
+
+<div class="doc">
+  <header class="cover">
+    <p class="kicker">Valuation Series &middot; II of II</p>
+    <h1>Sum-of-the-Parts &amp; AUM-Based Valuation</h1>
+    <p class="dek">
+      The two methods that account for what DDM and a single blended comps multiple both miss:
+      BlackRock isn't one business, and its value doesn't come from one number.
+    </p>
+    <div class="subject-line">
+      <span>SUBJECT: NYSE: BLK</span>
+      <span>METHOD: SOTP + AUM</span>
+      <span>COMPANION: DDM + COMPS</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="toc" aria-label="Table of contents">
+      <p class="toc-label">Contents</p>
+      <ol>
+        <li><a href="#sec-1">I. Sum-of-the-Parts</a></li>
+        <li><a href="#sec-2">II. AUM-Based Valuation</a></li>
+      </ol>
+    </nav>
+
+    <main>
+      <!-- ================= I. SOTP ================= -->
+      <section id="sec-1" class="chapter">
+        <span class="roman">Chapter I</span>
+        <h2>Sum-of-the-Parts (SOTP)</h2>
+        <p class="section-note">A single blended multiple assumes a single business. BlackRock has three genuinely different ones under one ticker.</p>
+
+        <div class="entry">
+          <p class="eyebrow">The core idea</p>
+          <h3>What SOTP Is</h3>
+          <p class="def">Instead of applying one multiple to a company's total earnings, SOTP values each distinct business segment separately &mdash; using the multiple appropriate to <i>that</i> segment's own risk and growth profile &mdash; then sums the pieces. It's more work than a single blended multiple, but it's more honest whenever a company is genuinely several businesses wearing one ticker.</p>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Why BlackRock specifically</p>
+          <h3>Three Businesses, One Ticker</h3>
+          <p class="def">BlackRock combines <b>active management</b> (traditional fund management, fees tied to performance and scale), <b>iShares/ETFs</b> (passive, high-volume, lower fee rate but enormous asset base), and <b>Aladdin</b> (a technology and risk-management platform other financial institutions pay to license). A single "asset manager" multiple applied to the whole company either overpays for the slow-growth pieces or underpays for the fast-growing one.</p>
+          <div class="why"><span class="tag">Why it matters</span>This is precisely the gap DDM and a single comps multiple both leave open &mdash; neither method looks inside the company at what's actually driving its growth.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Segment one</p>
+          <h3>Active Management</h3>
+          <p class="def">Traditional, actively-managed funds where returns depend on manager skill and market performance. Valued the way a conventional asset manager is valued &mdash; the same logic behind the peer set in the companion document (STT, TROW, IVZ, BEN).</p>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Segment two</p>
+          <h3>iShares &amp; Passive / ETFs</h3>
+          <p class="def">Lower fee rates per dollar managed, but an enormous and still-growing asset base. Valued more on scale and growth trajectory than on manager skill &mdash; a volume business, not a stock-picking one.</p>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Segment three</p>
+          <h3>Aladdin (Technology Platform)</h3>
+          <p class="def">Aladdin licenses BlackRock's risk-management and portfolio software to other institutions, generating recurring, subscription-like revenue. This behaves like a software (SaaS) business, not an asset manager &mdash; and software businesses command materially higher revenue multiples than fee-based money management.</p>
+          <div class="why"><span class="tag">Why it matters</span>This is the single biggest reason BlackRock trades at a premium to its comps peer set: the market is pricing in a technology business that the peer group simply doesn't have.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Putting it together</p>
+          <h3>The SOTP Bridge</h3>
+          <p class="def">Value each segment on its own appropriate multiple, then sum the three to arrive at total implied equity value &mdash; a materially different, more granular answer than one blended multiple could produce.</p>
+          <figure class="diagram">
+            <svg viewBox="0 0 640 260" role="img" aria-labelledby="sotp-title">
+              <title id="sotp-title">Stacked bar chart showing three business segments summing to total implied equity value</title>
+              <line x1="60" y1="220" x2="580" y2="220" stroke="var(--ink)" stroke-width="1"/>
+              <!-- stacked bar, single column, segments differentiated by opacity + separator lines -->
+              <g>
+                <rect x="130" y="150" width="90" height="70" fill="var(--ink)" opacity="1"/>
+                <rect x="130" y="80"  width="90" height="66" fill="var(--ink)" opacity="0.6"/>
+                <rect x="130" y="40"  width="90" height="36" fill="var(--ink)" opacity="0.3"/>
+              </g>
+              <g font-family="var(--font-mono)" font-size="10" fill="var(--card)">
+                <text x="175" y="190" text-anchor="middle">ACTIVE</text>
+                <text x="175" y="204" text-anchor="middle">$120B</text>
+              </g>
+              <g font-family="var(--font-mono)" font-size="10" fill="var(--ink)">
+                <text x="175" y="110" text-anchor="middle">iSHARES / ETF</text>
+                <text x="175" y="124" text-anchor="middle">$180B</text>
+              </g>
+              <g font-family="var(--font-mono)" font-size="10" fill="var(--ink)">
+                <text x="175" y="61" text-anchor="middle">ALADDIN</text>
+                <text x="175" y="73" text-anchor="middle">$60B</text>
+              </g>
+              <path d="M 225 40 C 280 40, 280 130, 340 130" fill="none" stroke="var(--muted)" stroke-width="1" stroke-dasharray="1 3"/>
+              <rect x="345" y="55" width="90" height="165" fill="none" stroke="var(--ink)" stroke-width="1.5"/>
+              <text x="390" y="46" text-anchor="middle" font-size="12" fill="var(--ink)" font-family="var(--font-mono)">$360B</text>
+              <text x="390" y="238" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="var(--font-mono)">TOTAL EQUITY VALUE</text>
+            </svg>
+            <figcaption>Illustrative segment values. Opacity distinguishes segments; each carries its own appropriate multiple before summing.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ================= II. AUM ================= -->
+      <section id="sec-2" class="chapter">
+        <span class="roman">Chapter II</span>
+        <h2>AUM-Based Valuation</h2>
+        <p class="section-note">The one number the entire business is a leveraged bet on.</p>
+
+        <div class="entry">
+          <p class="eyebrow">The core metric</p>
+          <h3>What AUM Is</h3>
+          <p class="def">Assets Under Management &mdash; the total market value of the money BlackRock manages on behalf of clients. Critically, this is <i>not</i> BlackRock's own money or revenue; it's the base its management fees are calculated against.</p>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Why it drives everything</p>
+          <h3>The AUM &rarr; Revenue &rarr; Earnings Chain</h3>
+          <p class="def">Average fee rate &times; AUM = revenue. Because fee rates move slowly and are largely set by competitive market forces, AUM growth is, to a first approximation, revenue growth. The entire business is essentially a leveraged bet on this one number continuing to climb.</p>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">The industry-specific check</p>
+          <h3>Price-to-AUM as a Sanity Check</h3>
+          <p class="def">Some analysts use price relative to AUM as a rough, industry-specific gut-check against DDM, comps, and SOTP &mdash; not a primary method, but a fast way to ask "does this valuation make sense relative to the sheer scale of money being managed."</p>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">The honest risk in the whole model</p>
+          <h3>Fee Compression</h3>
+          <p class="def">Average fee rates across the asset management industry have been declining for years, driven largely by the shift toward low-cost passive investing. This means AUM growth alone doesn't guarantee revenue growth &mdash; if fee rates keep falling faster than AUM grows, revenue can stagnate even as the "assets managed" headline number keeps climbing.</p>
+          <div class="why"><span class="tag">Why it matters</span>This is the single most important caveat to raise if anyone asks you to defend this valuation &mdash; a rising AUM number, on its own, is not the same thing as a company getting more valuable.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Putting it together</p>
+          <h3>The AUM Chain</h3>
+          <p class="def">AUM, multiplied by the fee rate it earns, becomes revenue; revenue, multiplied by margin and an appropriate multiple, becomes value. Fee compression is the pressure working against this chain at every step.</p>
+          <figure class="diagram">
+            <svg viewBox="0 0 640 200" role="img" aria-labelledby="aum-title">
+              <title id="aum-title">Flow diagram from assets under management through fee rate, revenue, and multiple to implied value</title>
+              <defs>
+                <marker id="arr" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                  <path d="M0,0 L8,4 L0,8 z" fill="var(--ink)"/>
+                </marker>
+              </defs>
+              <g font-family="var(--font-mono)" font-size="10.5">
+                <rect x="20"  y="70" width="120" height="60" fill="none" stroke="var(--ink)" stroke-width="1.5"/>
+                <text x="80" y="96" text-anchor="middle" fill="var(--ink)">AUM</text>
+                <text x="80" y="112" text-anchor="middle" fill="var(--ink-2)">$11.5T</text>
+
+                <rect x="180" y="70" width="120" height="60" fill="none" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="2 2"/>
+                <text x="240" y="92" text-anchor="middle" fill="var(--ink)">&times; FEE RATE</text>
+                <text x="240" y="108" text-anchor="middle" fill="var(--ink-2)">0.35%</text>
+                <text x="240" y="122" text-anchor="middle" fill="var(--muted)" font-size="9">under pressure</text>
+
+                <rect x="340" y="70" width="120" height="60" fill="var(--ink)"/>
+                <text x="400" y="96" text-anchor="middle" fill="var(--card)">REVENUE</text>
+                <text x="400" y="112" text-anchor="middle" fill="var(--card)">~$40B</text>
+
+                <rect x="500" y="70" width="120" height="60" fill="none" stroke="var(--ink)" stroke-width="1.5"/>
+                <text x="560" y="92" text-anchor="middle" fill="var(--ink)">&times; MARGIN</text>
+                <text x="560" y="108" text-anchor="middle" fill="var(--ink)">&amp; MULTIPLE</text>
+                <text x="560" y="122" text-anchor="middle" fill="var(--muted)" font-size="9">= value</text>
+              </g>
+              <path d="M 140 100 L 176 100" stroke="var(--ink)" stroke-width="1.5" marker-end="url(#arr)"/>
+              <path d="M 300 100 L 336 100" stroke="var(--ink)" stroke-width="1.5" marker-end="url(#arr)"/>
+              <path d="M 460 100 L 496 100" stroke="var(--ink)" stroke-width="1.5" marker-end="url(#arr)"/>
+            </svg>
+            <figcaption>Illustrative figures. The whole chain is only as strong as the fee-rate assumption in the second box.</figcaption>
+          </figure>
+          <div class="why"><span class="tag">Why it matters</span>This diagram is the honest one-picture summary of BlackRock's entire investment case &mdash; and its entire risk case.</div>
+        </div>
+
+        <div class="callout">
+          <span class="tag">Reading all four methods together</span>
+          <p>DDM gives a long-run, payout-based estimate. Comps gives a market-based reality check. SOTP accounts for Aladdin specifically. AUM-based valuation stress-tests the whole thing against the one metric the business actually runs on. No single method is "the" answer &mdash; the strength of a real valuation is in how these four triangulate, and in being able to explain why they might disagree.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="colophon">
+    VALUATION SERIES II/II &middot; SUM-OF-THE-PARTS &amp; AUM-BASED VALUATION &middot; SUBJECT: BLK &middot; COMPANION: DIVIDEND DISCOUNT MODEL &amp; COMPARABLE COMPANY ANALYSIS
+  </footer>
+</div>

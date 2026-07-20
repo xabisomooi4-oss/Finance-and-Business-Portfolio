@@ -15,7 +15,9 @@ This repo is the single link referenced on my resume and applications.
 - `agent/` — Stock Analysis Agent: a swing-trading (20/50-day MA, RSI) signal engine with backtesting, walk-forward validation, and a drift check, wrapped in an LLM reasoning layer (`llm_agent.py`) with tools for signals, backtests, news/catalysts, and watchlist scanning. Analysis only -- it never places trades.
   - `agent/dashboard.py` — a trading-terminal-style Streamlit dashboard: live price/MA/RSI charts, backtest-vs-buy-and-hold stats, a drift indicator, a ranked watchlist tier list, and **Moover** — a floating chat widget for free-form questions, grounded in the same tools and honesty rules as the rest of the Agent. Run with `streamlit run dashboard.py`.
   - `agent/notify.py` — fires a native macOS notification for notable new events only (a fresh golden/death cross, or a new drift warning). Meant to run once per trading day, since these are daily-close signals. Run with `python notify.py`.
-- `valuation-model/` — Stock Valuation Model *(coming soon)*
+- [`docs/ddm-comps.html`](docs/ddm-comps.html) — Dividend Discount Model & Comparable Company Analysis, applied to BlackRock (BLK).
+- [`docs/sotp-aum.html`](docs/sotp-aum.html) — Sum-of-the-Parts & AUM-based valuation, covering BlackRock's Aladdin technology segment specifically.
+- `valuation-model/` — Stock Valuation Model (BLK: DDM + Comps) *(build in progress)*
 - `portfolio-backtesting/` — Portfolio Analysis & Backtesting Model *(coming soon)*
 
 ## Status

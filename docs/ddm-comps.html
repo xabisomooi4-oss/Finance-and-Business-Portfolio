@@ -1,0 +1,305 @@
+<title>The Dividend Discount Model &amp; Comparable Company Analysis</title>
+<style>
+  :root {
+    --paper: #F3F4F5; --card: #FBFBFC; --card-border: #E1E3E6;
+    --ink: #101214; --ink-2: #6B7075; --muted: #9BA0A5; --rule: #D8DBDE;
+    --accent: #101214; --accent-invert: #FFFFFF;
+    --shadow: 0 1px 2px rgba(16,18,20,0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0E0F11; --card: #17181A; --card-border: #2A2C2F;
+      --ink: #F0F1F2; --ink-2: #9BA0A5; --muted: #5A5E63; --rule: #2A2C2F;
+      --accent: #F0F1F2; --accent-invert: #0E0F11;
+      --shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0E0F11; --card: #17181A; --card-border: #2A2C2F;
+    --ink: #F0F1F2; --ink-2: #9BA0A5; --muted: #5A5E63; --rule: #2A2C2F;
+    --accent: #F0F1F2; --accent-invert: #0E0F11;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4);
+  }
+  :root[data-theme="light"] {
+    --paper: #F3F4F5; --card: #FBFBFC; --card-border: #E1E3E6;
+    --ink: #101214; --ink-2: #6B7075; --muted: #9BA0A5; --rule: #D8DBDE;
+    --accent: #101214; --accent-invert: #FFFFFF;
+    --shadow: 0 1px 2px rgba(16,18,20,0.06);
+  }
+
+  * { box-sizing: border-box; }
+  body { background: var(--paper); }
+
+  .doc {
+    --font-display: Didot, "Bodoni MT", "Playfair Display", Georgia, serif;
+    --font-body: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-mono: "SF Mono", Menlo, Consolas, monospace;
+    font-family: var(--font-body);
+    color: var(--ink);
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 3.5rem 1.5rem 5rem;
+    line-height: 1.55;
+  }
+  a { color: var(--ink); text-decoration-color: var(--muted); }
+
+  .kicker { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); margin: 0 0 1.1rem; }
+  .cover h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.08; letter-spacing: -0.01em; margin: 0 0 1rem; max-width: 18ch; }
+  .dek { font-size: 1.05rem; color: var(--ink-2); max-width: 62ch; margin: 0 0 1.6rem; font-weight: 300; }
+  .subject-line { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 0.6rem 0; margin: 0 0 2.6rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.4rem 1.5rem; }
+
+  .layout { display: grid; grid-template-columns: 216px minmax(0,1fr); gap: 3rem; align-items: start; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } .toc { position: static !important; } }
+
+  .toc { position: sticky; top: 2rem; }
+  .toc-label { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin: 0 0 0.7rem; }
+  .toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+  .toc a { text-decoration: none; color: var(--ink-2); font-size: 0.88rem; display: block; padding: 0.15rem 0 0.15rem 0.75rem; border-left: 1px solid var(--rule); }
+  .toc a:hover { color: var(--ink); border-left-color: var(--ink); }
+
+  section.chapter { margin-bottom: 3.4rem; scroll-margin-top: 1.5rem; }
+  .chapter .roman { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.14em; color: var(--muted); display: block; margin-bottom: 0.5rem; }
+  .chapter h2 { font-family: var(--font-display); font-weight: 400; font-size: 1.75rem; margin: 0 0 0.4rem; letter-spacing: -0.005em; }
+  .chapter .section-note { color: var(--ink-2); font-size: 0.94rem; margin: 0 0 1.8rem; max-width: 64ch; font-weight: 300; padding-bottom: 1.6rem; border-bottom: 1px solid var(--rule); }
+
+  .entry { padding: 1.5rem 0; border-top: 1px solid var(--rule); }
+  .entry:first-of-type { border-top: none; padding-top: 0; }
+  .entry .eyebrow { font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 0 0 0.4rem; }
+  .entry h3 { font-family: var(--font-display); font-weight: 400; font-size: 1.35rem; margin: 0 0 0.6rem; letter-spacing: -0.005em; }
+  .entry p.def { color: var(--ink-2); max-width: 66ch; margin: 0 0 0.9rem; font-size: 0.98rem; font-weight: 300; }
+  .entry p.def b { color: var(--ink); font-weight: 600; }
+  .entry .why { font-size: 0.9rem; color: var(--ink); border-left: 2px solid var(--ink); padding-left: 0.9rem; max-width: 62ch; }
+  .entry .why .tag { font-family: var(--font-mono); font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); display: block; margin-bottom: 0.25rem; }
+
+  figure.diagram { margin: 1.1rem 0 0.4rem; background: var(--card); border: 1px solid var(--card-border); padding: 1.3rem 1.4rem 1rem; box-shadow: var(--shadow); max-width: 680px; overflow-x: auto; }
+  figure.diagram svg { display: block; width: 100%; height: auto; }
+  figure.diagram figcaption { font-family: var(--font-mono); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--rule); }
+
+  .mono-num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+  code.inline { font-family: var(--font-mono); font-size: 0.86em; background: var(--card); border: 1px solid var(--card-border); padding: 0.05em 0.4em; }
+
+  .callout { background: var(--ink); color: var(--accent-invert); padding: 1.1rem 1.3rem; margin: 1.2rem 0; max-width: 66ch; }
+  .callout .tag { font-family: var(--font-mono); font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.7; display: block; margin-bottom: 0.35rem; }
+  .callout p { margin: 0; font-size: 0.95rem; font-weight: 300; }
+
+  footer.colophon { margin-top: 3.8rem; padding-top: 1.8rem; border-top: 1px solid var(--ink); font-size: 0.82rem; color: var(--muted); max-width: 74ch; font-family: var(--font-mono); }
+</style>
+
+<div class="doc">
+  <header class="cover">
+    <p class="kicker">Valuation Series &middot; I of II</p>
+    <h1>The Dividend Discount Model &amp; Comparable Company Analysis</h1>
+    <p class="dek">
+      Why BlackRock is valued on what it pays out, not what it reinvests &mdash; and why comps
+      carry more weight here than they would for a typical operating company.
+    </p>
+    <div class="subject-line">
+      <span>SUBJECT: NYSE: BLK</span>
+      <span>METHOD: DDM + COMPS</span>
+      <span>SECTOR: ASSET MANAGEMENT</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="toc" aria-label="Table of contents">
+      <p class="toc-label">Contents</p>
+      <ol>
+        <li><a href="#sec-1">I. The Dividend Discount Model</a></li>
+        <li><a href="#sec-2">II. Comparable Company Analysis</a></li>
+      </ol>
+    </nav>
+
+    <main>
+      <!-- ================= I. DDM ================= -->
+      <section id="sec-1" class="chapter">
+        <span class="roman">Chapter I</span>
+        <h2>The Dividend Discount Model</h2>
+        <p class="section-note">The direct swap-in for a standard DCF when the business in question returns capital rather than reinvesting it.</p>
+
+        <div class="entry">
+          <p class="eyebrow">Foundation</p>
+          <h3>Time Value of Money, Revisited</h3>
+          <p class="def">A dollar received today is worth more than a dollar received in five years, because today's dollar can be invested and grow in the meantime. Every valuation method in this document &mdash; DDM, comps, and the two in the companion document &mdash; is ultimately a different way of applying this one idea.</p>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Why this method, this company</p>
+          <h3>Why DDM Fits BlackRock Better Than a DCF</h3>
+          <p class="def">A standard DCF discounts <b>free cash flow</b> &mdash; cash left over after a company funds its own operations and capital equipment. That framing assumes a business reinvesting heavily in physical or R&amp;D capacity. Asset managers don't fit that mold: BlackRock's core "product" is managing other people's money, and it returns a large share of what it earns directly to shareholders as dividends rather than plowing it back into capex. DDM values the business on the actual mechanism by which shareholders get paid.</p>
+          <div class="why"><span class="tag">Why it matters</span>This is a genuine methodology choice, not a simplification &mdash; real equity research on asset managers leans on DDM and comps specifically because of this structural difference.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">The discount rate</p>
+          <h3>Required Rate of Return (Cost of Equity)</h3>
+          <p class="def">DDM discounts at the <b>cost of equity</b> alone &mdash; not a blended WACC. The reason: dividends are a cash flow that reaches equity holders specifically, never debt holders, so there's no capital structure to blend. Cost of equity is typically estimated via CAPM: risk-free rate + (beta &times; equity risk premium).</p>
+          <div class="why"><span class="tag">Why it matters</span>Using WACC here would be a real, substantive error, not a rounding difference &mdash; it discounts the wrong cash flow at the wrong rate for who actually receives it.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">The forecast input</p>
+          <h3>Dividend Growth Rate</h3>
+          <p class="def">Projected forward from BlackRock's own dividend history and payout policy. Asset managers with long, stable dividend-growth track records (as BlackRock has) make this a more defensible forecast input than, say, projecting revenue growth for an early-stage company.</p>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Everything beyond the forecast window</p>
+          <h3>Terminal Value (Gordon Growth Model)</h3>
+          <p class="def">The same mechanic as a DCF's terminal value, applied to the final projected dividend: one lump-sum estimate standing in for every dividend beyond the explicit forecast period, discounted back to today. As with any DCF-family model, this single number typically makes up the majority of the total value &mdash; the part most sensitive to the growth assumption.</p>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Putting it together</p>
+          <h3>The DDM, End to End</h3>
+          <p class="def">Project dividends per share for each forecast year, discount each back to today at the cost of equity, add a discounted terminal value, and sum. That sum is the model's estimate of intrinsic value per share.</p>
+          <figure class="diagram">
+            <svg viewBox="0 0 640 230" role="img" aria-labelledby="ddm-title">
+              <title id="ddm-title">Bar chart of discounted dividend payments by year summing into an intrinsic value per share</title>
+              <line x1="40" y1="185" x2="610" y2="185" stroke="var(--rule)" stroke-width="1"/>
+              <g>
+                <rect x="55"  y="163" width="34" height="22" fill="var(--ink)"/>
+                <rect x="115" y="166" width="34" height="19" fill="var(--ink)" opacity="0.82"/>
+                <rect x="175" y="169" width="34" height="16" fill="var(--ink)" opacity="0.66"/>
+                <rect x="235" y="171" width="34" height="14" fill="var(--ink)" opacity="0.5"/>
+                <rect x="295" y="173" width="34" height="12" fill="var(--ink)" opacity="0.36"/>
+                <rect x="365" y="105" width="46" height="80" fill="var(--ink-2)"/>
+              </g>
+              <g class="mono-num" font-family="var(--font-mono)" font-size="10" fill="var(--ink-2)">
+                <text x="72"  y="155" text-anchor="middle">$19</text>
+                <text x="132" y="158" text-anchor="middle">$18</text>
+                <text x="192" y="161" text-anchor="middle">$17</text>
+                <text x="252" y="163" text-anchor="middle">$16</text>
+                <text x="312" y="165" text-anchor="middle">$15</text>
+                <text x="388" y="97" text-anchor="middle">$310</text>
+              </g>
+              <path d="M 415 180 C 445 180, 445 90, 475 90" fill="none" stroke="var(--muted)" stroke-width="1" stroke-dasharray="1 3"/>
+              <rect x="480" y="40" width="64" height="140" fill="none" stroke="var(--ink)" stroke-width="1.5"/>
+              <text x="512" y="34" text-anchor="middle" font-size="12" fill="var(--ink)" font-family="var(--font-mono)">$395</text>
+              <g font-family="var(--font-mono)" font-size="10" fill="var(--muted)">
+                <text x="72"  y="200" text-anchor="middle">YR 1</text>
+                <text x="132" y="200" text-anchor="middle">YR 2</text>
+                <text x="192" y="200" text-anchor="middle">YR 3</text>
+                <text x="252" y="200" text-anchor="middle">YR 4</text>
+                <text x="312" y="200" text-anchor="middle">YR 5</text>
+                <text x="388" y="200" text-anchor="middle">TERMINAL</text>
+                <text x="512" y="200" text-anchor="middle">= VALUE/SH</text>
+              </g>
+              <g font-family="var(--font-mono)" font-size="10" fill="var(--ink-2)">
+                <rect x="440" y="15" width="10" height="10" fill="var(--ink)"/>
+                <text x="454" y="24">Discounted dividends, Yr 1&ndash;5</text>
+              </g>
+              <g font-family="var(--font-mono)" font-size="10" fill="var(--ink-2)">
+                <rect x="55" y="15" width="10" height="10" fill="var(--ink-2)"/>
+                <text x="69" y="24">Discounted terminal value</text>
+              </g>
+            </svg>
+            <figcaption>Illustrative figures for teaching purposes, not live-fetched data. Weight/opacity, not hue, carries the distinction between forecast years and the terminal block.</figcaption>
+          </figure>
+          <div class="why"><span class="tag">Why it matters</span>This chart is the DDM equivalent of the DCF waterfall from your concept reference doc &mdash; same mechanic, dividends instead of free cash flow.</div>
+        </div>
+      </section>
+
+      <!-- ================= II. COMPS ================= -->
+      <section id="sec-2" class="chapter">
+        <span class="roman">Chapter II</span>
+        <h2>Comparable Company Analysis</h2>
+        <p class="section-note">For a company like BlackRock, comps aren't just the sanity check &mdash; in practice, they're often the method analysts trust most.</p>
+
+        <div class="entry">
+          <p class="eyebrow">A methodology note</p>
+          <h3>Why Comps Carry Extra Weight Here</h3>
+          <p class="def">DDM depends on forecasting a growth rate and a discount rate decades into the future &mdash; both genuinely uncertain. Comps sidestep that by asking a more grounded question: what is the market <i>actually paying</i> right now for businesses that look like this one? For a mature, well-covered sector like traditional asset management, that market-based signal is often more trusted than a long-horizon forecast.</p>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Choosing who counts</p>
+          <h3>Selecting the Peer Set</h3>
+          <p class="def">State Street (STT), T. Rowe Price (TROW), Invesco (IVZ), and Franklin Resources (BEN) &mdash; chosen because they share BlackRock's core business model (fee income earned on assets under management), similar regulatory exposure, and comparable revenue drivers. A peer set is only as useful as the businesses are actually alike.</p>
+          <div class="why"><span class="tag">Why it matters</span>The semiconductor peer set suggested earlier in this project (AMD, INTC, AVGO, QCOM) would have been meaningless here &mdash; comps only work when the businesses genuinely resemble each other.</div>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">The standard multiple</p>
+          <h3>P/E Multiple</h3>
+          <p class="def">Price divided by earnings per share. Applying the peer group's average P/E to BlackRock's own EPS backs into an implied share price &mdash; the market's going rate for a dollar of this kind of earnings.</p>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Capital-structure-neutral</p>
+          <h3>EV/EBITDA Multiple</h3>
+          <p class="def">Enterprise value divided by EBITDA. Useful alongside P/E because it isn't distorted by differences in how much debt each peer carries &mdash; it values the operating business itself, independent of financing choices.</p>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Putting it together</p>
+          <h3>Comps, Side by Side</h3>
+          <p class="def">BlackRock has historically traded at a premium multiple to this peer set &mdash; largely attributed to its scale, its iShares/ETF franchise, and Aladdin, its technology platform (the subject of the companion SOTP document).</p>
+          <figure class="diagram">
+            <svg viewBox="0 0 640 300" role="img" aria-labelledby="comps-title">
+              <title id="comps-title">Grouped bar chart comparing P/E and EV/EBITDA multiples across BlackRock and four peers</title>
+              <line x1="60" y1="250" x2="610" y2="250" stroke="var(--ink)" stroke-width="1"/>
+              <!-- bars: pairs of P/E (solid) and EV/EBITDA (hatched via opacity) per company -->
+              <g font-family="var(--font-mono)" font-size="10" fill="var(--ink-2)">
+                <!-- BLK -->
+                <rect x="75"  y="90"  width="20" height="160" fill="var(--ink)"/>
+                <rect x="98"  y="140" width="20" height="110" fill="var(--ink)" opacity="0.4"/>
+                <text x="96" y="264" text-anchor="middle" fill="var(--ink)" font-weight="bold">BLK</text>
+                <text x="85" y="84" text-anchor="middle">22x</text>
+                <text x="108" y="134" text-anchor="middle">15x</text>
+
+                <!-- STT -->
+                <rect x="165" y="163" width="20" height="87" fill="var(--ink)"/>
+                <rect x="188" y="184" width="20" height="66" fill="var(--ink)" opacity="0.4"/>
+                <text x="186" y="264" text-anchor="middle">STT</text>
+                <text x="175" y="157" text-anchor="middle">12x</text>
+                <text x="198" y="178" text-anchor="middle">9x</text>
+
+                <!-- TROW -->
+                <rect x="255" y="156" width="20" height="94" fill="var(--ink)"/>
+                <rect x="278" y="191" width="20" height="59" fill="var(--ink)" opacity="0.4"/>
+                <text x="276" y="264" text-anchor="middle">TROW</text>
+                <text x="265" y="150" text-anchor="middle">13x</text>
+                <text x="288" y="185" text-anchor="middle">8x</text>
+
+                <!-- IVZ -->
+                <rect x="345" y="177" width="20" height="73" fill="var(--ink)"/>
+                <rect x="368" y="198" width="20" height="52" fill="var(--ink)" opacity="0.4"/>
+                <text x="366" y="264" text-anchor="middle">IVZ</text>
+                <text x="355" y="171" text-anchor="middle">10x</text>
+                <text x="378" y="192" text-anchor="middle">7x</text>
+
+                <!-- BEN -->
+                <rect x="435" y="170" width="20" height="80" fill="var(--ink)"/>
+                <rect x="458" y="198" width="20" height="52" fill="var(--ink)" opacity="0.4"/>
+                <text x="456" y="264" text-anchor="middle">BEN</text>
+                <text x="445" y="164" text-anchor="middle">11x</text>
+                <text x="468" y="192" text-anchor="middle">7x</text>
+              </g>
+              <g font-family="var(--font-mono)" font-size="10" fill="var(--ink-2)">
+                <rect x="75" y="20" width="12" height="12" fill="var(--ink)"/>
+                <text x="91" y="30">P/E</text>
+                <rect x="140" y="20" width="12" height="12" fill="var(--ink)" opacity="0.4"/>
+                <text x="156" y="30">EV/EBITDA</text>
+              </g>
+            </svg>
+            <figcaption>Illustrative multiples. BlackRock's premium to peers is the pattern worth explaining, not just the numbers themselves.</figcaption>
+          </figure>
+        </div>
+
+        <div class="entry">
+          <p class="eyebrow">Reading the two methods together</p>
+          <h3>Triangulating DDM and Comps</h3>
+          <p class="def">When DDM and comps land near each other, that's a meaningfully stronger signal than either alone. When they diverge, the gap itself is informative: DDM reflects a long-run assumption about payout policy and growth, while comps reflect what the market is willing to pay <i>right now</i> &mdash; a divergence often means the market is pricing in something (optimism, risk, a catalyst) that a steady-state dividend model doesn't capture.</p>
+          <div class="callout">
+            <span class="tag">Carrying forward</span>
+            <p>The companion document covers Sum-of-the-Parts and AUM-based valuation &mdash; the two methods that account for BlackRock's Aladdin technology segment specifically, which neither DDM nor a single blended comps multiple fully captures on its own.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="colophon">
+    VALUATION SERIES I/II &middot; DIVIDEND DISCOUNT MODEL &amp; COMPARABLE COMPANY ANALYSIS &middot; SUBJECT: BLK &middot; COMPANION: SUM-OF-THE-PARTS &amp; AUM-BASED VALUATION
+  </footer>
+</div>
