@@ -7,9 +7,18 @@ is available, and which peers were excluded is reported explicitly rather
 than silently skewing the average.
 """
 
+from concurrent.futures import ThreadPoolExecutor
+
 from data import get_fundamentals
 
 PEERS = ["STT", "TROW", "IVZ", "BEN"]
+
+
+def fetch_peers(peers: list) -> list:
+    """Peer fetches are independent network calls -- run them concurrently
+    instead of one at a time. Order is preserved to match `peers`."""
+    with ThreadPoolExecutor(max_workers=len(peers)) as pool:
+        return list(pool.map(get_fundamentals, peers))
 
 
 def peer_average_multiple(peer_data: list, field: str) -> tuple:
@@ -22,10 +31,12 @@ def peer_average_multiple(peer_data: list, field: str) -> tuple:
     return avg, [s for s, _ in included], excluded
 
 
-def run_comps(symbol: str = "BLK", peers: list = None) -> dict:
+def run_comps(symbol: str = "BLK", peers: list = None, target_fundamentals: dict = None) -> dict:
+    """Pass `target_fundamentals` (from data.get_fundamentals) to reuse an
+    already-fetched result for `symbol` instead of hitting yfinance again."""
     peers = peers or PEERS
-    target = get_fundamentals(symbol)
-    peer_data = [get_fundamentals(p) for p in peers]
+    target = target_fundamentals or get_fundamentals(symbol)
+    peer_data = fetch_peers(peers)
 
     avg_pe, pe_included, pe_excluded = peer_average_multiple(peer_data, "trailing_pe")
     avg_ev_ebitda, ev_included, ev_excluded = peer_average_multiple(peer_data, "ev_to_ebitda")
@@ -42,6 +53,8 @@ def run_comps(symbol: str = "BLK", peers: list = None) -> dict:
     return {
         "symbol": symbol,
         "current_price": price,
+        "target_data": target,
+        "peer_data": peer_data,
         "own_pe": target["trailing_pe"],
         "own_ev_ebitda": target["ev_to_ebitda"],
         "peer_avg_pe": avg_pe,

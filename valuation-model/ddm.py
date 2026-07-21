@@ -57,8 +57,10 @@ def present_value_series(cash_flows: list, discount_rate: float) -> list:
     return [cf / (1 + discount_rate) ** (i + 1) for i, cf in enumerate(cash_flows)]
 
 
-def run_ddm(symbol: str, growth_rate: float = None, forecast_years: int = FORECAST_YEARS) -> dict:
-    f = get_fundamentals(symbol)
+def run_ddm(symbol: str, growth_rate: float = None, forecast_years: int = FORECAST_YEARS, fundamentals: dict = None) -> dict:
+    """Pass `fundamentals` (from data.get_fundamentals) to reuse an
+    already-fetched result instead of hitting yfinance again."""
+    f = fundamentals or get_fundamentals(symbol)
     rf = get_risk_free_rate()
     re = cost_of_equity(f["beta"], rf)
 

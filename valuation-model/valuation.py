@@ -8,10 +8,10 @@ from comps import run_comps, PEERS
 
 
 def run_valuation(symbol: str = "BLK") -> dict:
-    ddm = run_ddm(symbol)
-    comps = run_comps(symbol)
-    payout_ratio = get_fundamentals(symbol)["payout_ratio"]
-    return {"symbol": symbol, "ddm": ddm, "comps": comps, "payout_ratio": payout_ratio}
+    fundamentals = get_fundamentals(symbol)  # fetched once, reused by both methods below
+    ddm = run_ddm(symbol, fundamentals=fundamentals)
+    comps = run_comps(symbol, target_fundamentals=fundamentals)
+    return {"symbol": symbol, "ddm": ddm, "comps": comps, "payout_ratio": fundamentals["payout_ratio"]}
 
 
 def print_summary(result: dict) -> None:
