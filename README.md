@@ -3,7 +3,7 @@
 A working portfolio of three quantitative finance projects, built end to end:
 
 1. **Stock Analysis Agent** — entry/exit signal generation
-2. **Stock Valuation Model** — DCF + comparables
+2. **Stock Valuation Model** — DDM + comparables (BlackRock, BLK)
 3. **Portfolio Analysis & Backtesting Model** — including correlation/risk analysis
 
 This repo is the single link referenced on my resume and applications.
@@ -17,7 +17,7 @@ This repo is the single link referenced on my resume and applications.
   - `agent/notify.py` — fires a native macOS notification for notable new events only (a fresh golden/death cross, or a new drift warning). Meant to run once per trading day, since these are daily-close signals. Run with `python notify.py`.
 - [`docs/ddm-comps.html`](docs/ddm-comps.html) — Dividend Discount Model & Comparable Company Analysis, applied to BlackRock (BLK).
 - [`docs/sotp-aum.html`](docs/sotp-aum.html) — Sum-of-the-Parts & AUM-based valuation, covering BlackRock's Aladdin technology segment specifically.
-- `valuation-model/` — Stock Valuation Model (BLK: DDM + Comps) *(build in progress)*
+- `valuation-model/` — Stock Valuation Model for BlackRock (BLK): `data.py` (fundamentals via yfinance, with real-world gap handling), `ddm.py` (CAPM cost of equity + Gordon Growth DDM), `comps.py` (P/E + EV/EBITDA vs. STT/TROW/IVZ/BEN), `valuation.py` (combined summary). Live result: DDM implies BLK is ~68% overvalued, comps imply ~28-30% -- the gap itself is diagnosed (BLK's ~52% payout ratio means DDM can't see value from reinvested earnings) rather than papered over. See `docs/ddm-comps.html` and `docs/sotp-aum.html` for the full reasoning.
 - `portfolio-backtesting/` — Portfolio Analysis & Backtesting Model *(coming soon)*
 
 ## Status
