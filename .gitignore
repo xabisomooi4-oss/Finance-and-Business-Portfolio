@@ -14,3 +14,4 @@ node_modules/
 .notify_state.json
 .notify_log.txt
 .notify_error.txt
+*.xlsx
