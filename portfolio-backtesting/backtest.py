@@ -47,9 +47,12 @@ def drawdown_series(equity: pd.Series) -> pd.Series:
     return (equity - running_max) / running_max
 
 
-def run_backtest(period: str = "3y", weights: dict = None, starting_value: float = 10_000.0) -> dict:
+def run_backtest(period: str = "3y", weights: dict = None, starting_value: float = 10_000.0, prefetched: tuple = None) -> dict:
+    """Pass `prefetched` as (prices, benchmark_prices) -- from
+    data.get_portfolio_and_benchmark -- to reuse already-fetched data
+    instead of hitting yfinance again."""
     weights = weights or EQUAL_WEIGHT
-    prices, benchmark_prices = get_portfolio_and_benchmark(period=period)
+    prices, benchmark_prices = prefetched or get_portfolio_and_benchmark(period=period)
 
     portfolio_equity = simulate_portfolio(prices, weights, starting_value)
     bench_equity = benchmark_curve(benchmark_prices, starting_value)

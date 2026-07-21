@@ -69,9 +69,12 @@ def beta_vs_benchmark(portfolio_returns: pd.Series, benchmark_returns: pd.Series
     return float(cov / var)
 
 
-def run_metrics(period: str = "3y", weights: dict = None) -> dict:
+def run_metrics(period: str = "3y", weights: dict = None, prefetched: tuple = None) -> dict:
+    """Pass `prefetched` as (prices, benchmark_prices) -- from
+    data.get_portfolio_and_benchmark -- to reuse already-fetched data
+    instead of hitting yfinance again."""
     weights = weights or EQUAL_WEIGHT
-    prices, benchmark_prices = get_portfolio_and_benchmark(period=period)
+    prices, benchmark_prices = prefetched or get_portfolio_and_benchmark(period=period)
     returns = get_returns(prices)
     benchmark_returns = benchmark_prices.pct_change().dropna()
 
