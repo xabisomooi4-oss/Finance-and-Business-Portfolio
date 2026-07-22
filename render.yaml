@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: stock-analysis-agent-api
+    runtime: python
+    rootDir: agent
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api:app --host 0.0.0.0 --port $PORT
+    plan: free
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
