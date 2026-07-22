@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Stock Analysis Agent</title>
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+  :root {
+    --surface: #0A0E14;
+    --card: #131A24;
+    --card-border: #232C3A;
+    --blue: #3B82F6;
+    --blue-slate: #4E7FBE;
+    --gain: #2FAE72;
+    --loss: #EF4444;
+    --muted: #5C6B7A;
+    --text: #E8EDF2;
+    --font-body: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    --font-mono: "SF Mono", Menlo, Consolas, "Roboto Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--surface); color: var(--text);
+    font-family: var(--font-body);
+  }
+  a { color: var(--blue); }
+
+  /* ---- header ---- */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.75rem 1.25rem;
+    background: var(--card); border-bottom: 1px solid var(--card-border);
+    flex-wrap: wrap; gap: 0.75rem;
+  }
+  header .brand { display: flex; align-items: center; gap: 0.6rem; }
+  header .brand .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--gain); box-shadow: 0 0 8px var(--gain); }
+  header h1 { font-size: 0.95rem; font-weight: 600; letter-spacing: 0.03em; margin: 0; text-transform: uppercase; }
+  header .tagline { font-size: 0.72rem; color: var(--muted); font-family: var(--font-mono); }
+
+  .search-bar { display: flex; gap: 0.5rem; align-items: center; }
+  .search-bar input {
+    background: var(--surface); border: 1px solid var(--card-border); color: var(--text);
+    font-family: var(--font-mono); font-size: 0.85rem; padding: 0.45rem 0.7rem;
+    border-radius: 3px; width: 130px; text-transform: uppercase;
+  }
+  .search-bar input:focus { outline: none; border-color: var(--blue); }
+  button.primary {
+    background: var(--blue); color: #fff; border: none; border-radius: 3px;
+    padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+    font-family: var(--font-body); letter-spacing: 0.02em;
+  }
+  button.primary:hover { background: #2563eb; }
+  button.primary:disabled { opacity: 0.5; cursor: default; }
+  button.ghost {
+    background: transparent; color: var(--text); border: 1px solid var(--card-border);
+    border-radius: 3px; padding: 0.5rem 0.9rem; font-size: 0.8rem; cursor: pointer; font-family: var(--font-body);
+  }
+  button.ghost:hover { border-color: var(--blue); }
+
+  /* ---- quote strip ---- */
+  .quote-strip {
+    display: flex; gap: 0; background: var(--surface);
+    border-bottom: 1px solid var(--card-border);
+    overflow-x: auto;
+  }
+  .quote-strip .stat {
+    padding: 0.6rem 1.25rem; border-right: 1px solid var(--card-border);
+    min-width: 110px;
+  }
+  .quote-strip .stat .label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-family: var(--font-mono); }
+  .quote-strip .stat .value { font-size: 1.15rem; font-family: var(--font-mono); font-weight: 600; margin-top: 0.15rem; }
+  .value.gain { color: var(--gain); }
+  .value.loss { color: var(--loss); }
+
+  /* ---- layout ---- */
+  main { padding: 1rem; max-width: 1600px; margin: 0 auto; }
+  .grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 1rem; }
+  @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--card); border: 1px solid var(--card-border); border-radius: 6px;
+    padding: 0.9rem 1rem; margin-bottom: 1rem;
+  }
+  .panel h2 {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
+    margin: 0 0 0.7rem; font-family: var(--font-mono); font-weight: 600;
+  }
+
+  #candle-chart, #rsi-chart { width: 100%; }
+  #candle-chart { height: 380px; }
+  #rsi-chart { height: 130px; margin-top: 0.4rem; }
+  .chart-legend { display: flex; gap: 1rem; font-size: 0.72rem; color: var(--muted); font-family: var(--font-mono); margin-bottom: 0.5rem; }
+  .chart-legend span { display: flex; align-items: center; gap: 0.35rem; }
+  .chart-legend i { width: 12px; height: 2px; display: inline-block; }
+
+  .stat-tile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+  .stat-tile { background: var(--surface); border: 1px solid var(--card-border); border-radius: 4px; padding: 0.55rem 0.7rem; }
+  .stat-tile .label { font-size: 0.6rem; text-transform: uppercase; color: var(--muted); font-family: var(--font-mono); letter-spacing: 0.05em; }
+  .stat-tile .value { font-size: 1rem; font-family: var(--font-mono); font-weight: 600; margin-top: 0.2rem; }
+
+  .drift-badge { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; font-family: var(--font-mono); }
+  .drift-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .drift-ok { background: var(--gain); }
+  .drift-warn { background: #F59E0B; }
+  .drift-insufficient { background: var(--muted); }
+
+  .news-item { padding: 0.5rem 0; border-top: 1px solid var(--card-border); font-size: 0.78rem; }
+  .news-item:first-child { border-top: none; }
+  .news-item .title { color: var(--text); }
+  .news-item .meta { color: var(--muted); font-family: var(--font-mono); font-size: 0.68rem; margin-top: 0.2rem; }
+
+  .analysis-body { font-size: 0.92rem; line-height: 1.6; }
+  .analysis-body h2 { font-size: 1.1rem; margin: 1rem 0 0.5rem; color: var(--text); }
+  .analysis-body h3 { font-size: 0.95rem; margin: 0.9rem 0 0.4rem; color: var(--blue-slate); }
+  .analysis-body ul { padding-left: 1.2rem; margin: 0.4rem 0; }
+  .analysis-body li { margin-bottom: 0.3rem; }
+  .analysis-body strong { color: var(--text); }
+  .analysis-body p { margin: 0.5rem 0; color: #C7CDD3; }
+
+  .tool-log { font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted); background: var(--surface); border: 1px solid var(--card-border); border-radius: 4px; padding: 0.5rem 0.7rem; margin-top: 0.6rem; max-height: 140px; overflow-y: auto; }
+  .tool-log div { padding: 0.15rem 0; }
+
+  .spinner-row { display: flex; align-items: center; gap: 0.5rem; color: var(--muted); font-size: 0.82rem; font-family: var(--font-mono); }
+  .spinner { width: 12px; height: 12px; border: 2px solid var(--card-border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  table.watchlist-table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 0.8rem; }
+  table.watchlist-table th { text-align: left; color: var(--muted); font-weight: 600; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 0.05em; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--card-border); }
+  table.watchlist-table td { padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--card-border); }
+
+  /* ---- moover dock ---- */
+  #moover-toggle {
+    position: fixed; bottom: 1.25rem; right: 1.25rem; z-index: 50;
+    width: 52px; height: 52px; border-radius: 50%;
+    background: var(--blue); border: none; color: #fff; font-size: 1.4rem;
+    cursor: pointer; box-shadow: 0 4px 18px rgba(59,130,246,0.45);
+  }
+  #moover-panel {
+    position: fixed; bottom: 5.2rem; right: 1.25rem; z-index: 49;
+    width: 360px; max-height: 65vh; display: none; flex-direction: column;
+    background: var(--card); border: 1px solid var(--card-border); border-radius: 8px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5); overflow: hidden;
+  }
+  #moover-panel.open { display: flex; }
+  #moover-header { padding: 0.7rem 0.9rem; border-bottom: 1px solid var(--card-border); font-size: 0.8rem; font-weight: 600; }
+  #moover-messages { flex: 1; overflow-y: auto; padding: 0.7rem 0.9rem; display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.82rem; }
+  .msg-user { align-self: flex-end; background: var(--blue); color: #fff; padding: 0.45rem 0.7rem; border-radius: 8px 8px 2px 8px; max-width: 85%; }
+  .msg-assistant { align-self: flex-start; background: var(--surface); border: 1px solid var(--card-border); padding: 0.45rem 0.7rem; border-radius: 8px 8px 8px 2px; max-width: 90%; }
+  #moover-input-row { display: flex; gap: 0.4rem; padding: 0.6rem; border-top: 1px solid var(--card-border); }
+  #moover-input { flex: 1; background: var(--surface); border: 1px solid var(--card-border); color: var(--text); border-radius: 4px; padding: 0.45rem 0.6rem; font-size: 0.82rem; font-family: var(--font-body); }
+  #moover-input:focus { outline: none; border-color: var(--blue); }
+  #moover-send { background: var(--blue); border: none; color: #fff; border-radius: 4px; padding: 0 0.8rem; cursor: pointer; }
+
+  footer { text-align: center; padding: 1.5rem; color: var(--muted); font-size: 0.72rem; font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="dot"></span>
+    <div>
+      <h1>Stock Analysis Agent</h1>
+      <div class="tagline">Analysis only &mdash; it never places trades.</div>
+    </div>
+  </div>
+  <div class="search-bar">
+    <input id="ticker-input" type="text" value="NVDA" maxlength="8" />
+    <button class="primary" id="analyze-btn">Analyze</button>
+  </div>
+</header>
+
+<div class="quote-strip" id="quote-strip">
+  <div class="stat"><div class="label">Price</div><div class="value" id="q-price">&mdash;</div></div>
+  <div class="stat"><div class="label">RSI (14)</div><div class="value" id="q-rsi">&mdash;</div></div>
+  <div class="stat"><div class="label">MA Spread</div><div class="value" id="q-spread">&mdash;</div></div>
+  <div class="stat"><div class="label">Trend</div><div class="value" id="q-trend" style="font-size:0.85rem;">&mdash;</div></div>
+</div>
+
+<main>
+  <div class="grid">
+    <div>
+      <div class="panel">
+        <h2>Price &amp; Moving Averages</h2>
+        <div class="chart-legend">
+          <span><i style="background:#9BA5B0"></i> Close</span>
+          <span><i style="background:var(--blue)"></i> MA 20</span>
+          <span><i style="background:var(--blue-slate)"></i> MA 50</span>
+        </div>
+        <div id="candle-chart"></div>
+        <h2 style="margin-top:0.8rem;">RSI (14)</h2>
+        <div id="rsi-chart"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Agent's Read</h2>
+        <div id="analysis-status" class="spinner-row" style="display:none;">
+          <span class="spinner"></span><span>Agent is reasoning through the signals&hellip;</span>
+        </div>
+        <div id="analysis-body" class="analysis-body">
+          <p style="color:var(--muted);">Click <strong>Analyze</strong> above to get the Agent's full written reasoning for this ticker.</p>
+        </div>
+        <div id="tool-log" class="tool-log" style="display:none;"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h2>Backtest vs. Buy &amp; Hold (5y)</h2>
+        <div class="stat-tile-grid">
+          <div class="stat-tile"><div class="label">Strategy Return</div><div class="value" id="bt-return">&mdash;</div></div>
+          <div class="stat-tile"><div class="label">Buy &amp; Hold</div><div class="value" id="bt-buyhold">&mdash;</div></div>
+          <div class="stat-tile"><div class="label">Sharpe Ratio</div><div class="value" id="bt-sharpe">&mdash;</div></div>
+          <div class="stat-tile"><div class="label">Max Drawdown</div><div class="value" id="bt-drawdown">&mdash;</div></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Drift Status</h2>
+        <div id="drift-badge" class="drift-badge">&mdash;</div>
+        <div id="drift-detail" style="font-size:0.75rem; color:var(--muted); margin-top:0.4rem; font-family:var(--font-mono);"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Recent News</h2>
+        <div id="news-list" style="color:var(--muted); font-size:0.78rem;">&mdash;</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Watchlist Tier List</h2>
+    <div style="display:flex; gap:0.5rem; margin-bottom:0.8rem;">
+      <input id="watchlist-input" type="text" value="NVDA, AAPL, MSFT, TSLA, AMD, GOOGL"
+             style="flex:1; background:var(--surface); border:1px solid var(--card-border); color:var(--text); border-radius:3px; padding:0.5rem 0.7rem; font-family:var(--font-mono); font-size:0.8rem;" />
+      <button class="ghost" id="scan-btn">Scan Watchlist</button>
+    </div>
+    <div id="watchlist-table-wrap"></div>
+    <div id="watchlist-status" class="spinner-row" style="display:none; margin-top:0.6rem;">
+      <span class="spinner"></span><span>Agent is scanning the watchlist&hellip;</span>
+    </div>
+    <div id="watchlist-analysis" class="analysis-body"></div>
+  </div>
+</main>
+
+<footer>Stock Analysis Agent &middot; Signal Engine + LLM reasoning layer &middot; not investment advice</footer>
+
+<button id="moover-toggle">&#128009;</button>
+<div id="moover-panel">
+  <div id="moover-header">&#128009; Moover</div>
+  <div id="moover-messages"></div>
+  <div id="moover-input-row">
+    <input id="moover-input" type="text" placeholder="Ask Moover..." />
+    <button id="moover-send">&#10148;</button>
+  </div>
+</div>
+
+<script>
+const API_BASE = "http://localhost:8000"; // TODO: update to the live Render URL after deployment
+
+// ---------- tiny markdown renderer (subset the Agent actually produces) ----------
+function renderMarkdown(md) {
+  if (!md) return "";
+  let html = md
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/^## (.*)$/gm, "<h2>$1</h2>")
+    .replace(/^### (.*)$/gm, "<h3>$1</h3>")
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.*?)\*/g, "<em>$1</em>");
+
+  const lines = html.split("\n");
+  let out = [];
+  let inList = false;
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith("- ")) {
+      if (!inList) { out.push("<ul>"); inList = true; }
+      out.push("<li>" + trimmed.slice(2) + "</li>");
+    } else {
+      if (inList) { out.push("</ul>"); inList = false; }
+      if (trimmed.startsWith("<h2>") || trimmed.startsWith("<h3>")) {
+        out.push(trimmed);
+      } else if (trimmed.length) {
+        out.push("<p>" + trimmed + "</p>");
+      }
+    }
+  }
+  if (inList) out.push("</ul>");
+  return out.join("\n");
+}
+
+function fmtPct(v, decimals = 1) {
+  if (v === null || v === undefined) return "&mdash;";
+  return (v > 0 ? "+" : "") + v.toFixed(decimals) + "%";
+}
+
+// ---------- charts ----------
+let candleChart, candleSeries, ma20Series, ma50Series, rsiChart, rsiSeries;
+
+function initCharts() {
+  const chartOptions = {
+    layout: { background: { color: "#131A24" }, textColor: "#E8EDF2" },
+    grid: { vertLines: { color: "#232C3A" }, horzLines: { color: "#232C3A" } },
+    timeScale: { borderColor: "#232C3A" },
+    rightPriceScale: { borderColor: "#232C3A" },
+  };
+
+  candleChart = LightweightCharts.createChart(document.getElementById("candle-chart"), {
+    ...chartOptions,
+    width: document.getElementById("candle-chart").clientWidth,
+    height: 380,
+  });
+  candleSeries = candleChart.addCandlestickSeries({
+    upColor: "#2FAE72", downColor: "#EF4444", borderVisible: false,
+    wickUpColor: "#2FAE72", wickDownColor: "#EF4444",
+  });
+  ma20Series = candleChart.addLineSeries({ color: "#3B82F6", lineWidth: 2 });
+  ma50Series = candleChart.addLineSeries({ color: "#4E7FBE", lineWidth: 2 });
+
+  rsiChart = LightweightCharts.createChart(document.getElementById("rsi-chart"), {
+    ...chartOptions,
+    width: document.getElementById("rsi-chart").clientWidth,
+    height: 130,
+  });
+  rsiSeries = rsiChart.addLineSeries({ color: "#4E7FBE", lineWidth: 2 });
+
+  window.addEventListener("resize", () => {
+    candleChart.applyOptions({ width: document.getElementById("candle-chart").clientWidth });
+    rsiChart.applyOptions({ width: document.getElementById("rsi-chart").clientWidth });
+  });
+}
+
+async function loadChart(ticker) {
+  const res = await fetch(`${API_BASE}/api/chart/${ticker}?period=1y`);
+  if (!res.ok) throw new Error(`chart fetch failed: ${res.status}`);
+  const data = await res.json();
+
+  candleSeries.setData(data.candles);
+  ma20Series.setData(data.ma20);
+  ma50Series.setData(data.ma50);
+  rsiSeries.setData(data.rsi);
+  candleSeries.setMarkers(data.markers);
+  candleChart.timeScale().fitContent();
+  rsiChart.timeScale().fitContent();
+}
+
+// ---------- quote strip + backtest + drift + news ----------
+async function loadSignal(ticker) {
+  const res = await fetch(`${API_BASE}/api/signal/${ticker}`);
+  if (!res.ok) throw new Error(`signal fetch failed: ${res.status}`);
+  const d = await res.json();
+
+  document.getElementById("q-price").textContent = "$" + d.close.toFixed(2);
+  document.getElementById("q-rsi").textContent = d.rsi_14.toFixed(1);
+  const spreadEl = document.getElementById("q-spread");
+  spreadEl.textContent = fmtPct(d.ma_spread_pct, 2);
+  spreadEl.className = "value " + (d.ma_spread_pct >= 0 ? "gain" : "loss");
+  document.getElementById("q-trend").textContent = d.trend_state;
+}
+
+async function loadBacktest(ticker) {
+  const res = await fetch(`${API_BASE}/api/backtest/${ticker}`);
+  if (!res.ok) throw new Error(`backtest fetch failed: ${res.status}`);
+  const d = await res.json();
+  document.getElementById("bt-return").textContent = fmtPct(d.total_return_pct);
+  document.getElementById("bt-buyhold").textContent = fmtPct(d.buy_and_hold_return_pct);
+  document.getElementById("bt-sharpe").textContent = d.sharpe_ratio.toFixed(2);
+  document.getElementById("bt-drawdown").textContent = fmtPct(d.max_drawdown_pct);
+}
+
+async function loadDrift(ticker) {
+  const res = await fetch(`${API_BASE}/api/drift/${ticker}`);
+  if (!res.ok) throw new Error(`drift fetch failed: ${res.status}`);
+  const d = await res.json();
+  const dotClass = d.status === "OK" ? "drift-ok" : d.status === "DRIFT WARNING" ? "drift-warn" : "drift-insufficient";
+  document.getElementById("drift-badge").innerHTML =
+    `<span class="drift-dot ${dotClass}"></span> ${d.status}`;
+  document.getElementById("drift-detail").textContent =
+    `Recent Sharpe ${d.recent_sharpe} vs. reference ${d.reference_sharpe} · ${d.recent_num_trades} trade(s) in last 90d`;
+}
+
+async function loadNews(ticker) {
+  const res = await fetch(`${API_BASE}/api/news/${ticker}?max_articles=4`);
+  if (!res.ok) throw new Error(`news fetch failed: ${res.status}`);
+  const items = await res.json();
+  const el = document.getElementById("news-list");
+  if (!items.length) { el.innerHTML = "No recent headlines."; return; }
+  el.innerHTML = items.map(n => `
+    <div class="news-item">
+      <div class="title">${n.title || ""}</div>
+      <div class="meta">${n.publisher || ""}</div>
+    </div>
+  `).join("");
+}
+
+// ---------- agent analysis ----------
+async function runAnalysis(ticker) {
+  const statusEl = document.getElementById("analysis-status");
+  const bodyEl = document.getElementById("analysis-body");
+  const logEl = document.getElementById("tool-log");
+  statusEl.style.display = "flex";
+  bodyEl.innerHTML = "";
+  logEl.style.display = "none";
+
+  try {
+    const res = await fetch(`${API_BASE}/api/analyze`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ticker }),
+    });
+    if (!res.ok) throw new Error(`analyze failed: ${res.status}`);
+    const d = await res.json();
+    bodyEl.innerHTML = renderMarkdown(d.answer);
+    if (d.tool_calls && d.tool_calls.length) {
+      logEl.style.display = "block";
+      logEl.innerHTML = d.tool_calls.map(t => `<div>${t.name}(${JSON.stringify(t.inputs)})</div>`).join("");
+    }
+  } catch (e) {
+    bodyEl.innerHTML = `<p style="color:var(--loss);">Error: ${e.message}</p>`;
+  } finally {
+    statusEl.style.display = "none";
+  }
+}
+
+// ---------- main analyze flow ----------
+async function analyzeTicker(ticker) {
+  ticker = ticker.trim().toUpperCase();
+  if (!ticker) return;
+  const btn = document.getElementById("analyze-btn");
+  btn.disabled = true;
+  try {
+    await Promise.all([
+      loadChart(ticker), loadSignal(ticker), loadBacktest(ticker), loadDrift(ticker), loadNews(ticker),
+    ]);
+    await runAnalysis(ticker);
+  } catch (e) {
+    console.error(e);
+    document.getElementById("analysis-body").innerHTML = `<p style="color:var(--loss);">Error loading ${ticker}: ${e.message}</p>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ---------- watchlist ----------
+async function scanWatchlist() {
+  const input = document.getElementById("watchlist-input").value;
+  const tickers = input.split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
+  const tableWrap = document.getElementById("watchlist-table-wrap");
+  const statusEl = document.getElementById("watchlist-status");
+  const analysisEl = document.getElementById("watchlist-analysis");
+  statusEl.style.display = "flex";
+  analysisEl.innerHTML = "";
+
+  try {
+    const scanRes = await fetch(`${API_BASE}/api/watchlist?tickers=${tickers.join(",")}`);
+    const scanData = await scanRes.json();
+    tableWrap.innerHTML = `
+      <table class="watchlist-table">
+        <thead><tr><th>Ticker</th><th>Close</th><th>RSI</th><th>MA Spread</th><th>Trend Days</th><th>Sharpe (1y)</th><th>vs Buy&amp;Hold</th></tr></thead>
+        <tbody>
+          ${scanData.map(r => r.error ? `<tr><td>${r.ticker}</td><td colspan="6" style="color:var(--loss);">${r.error}</td></tr>` : `
+            <tr>
+              <td><strong>${r.ticker}</strong></td>
+              <td>$${r.close.toFixed(2)}</td>
+              <td>${r.rsi_14.toFixed(1)}</td>
+              <td>${fmtPct(r.ma_spread_pct, 2)}</td>
+              <td>${r.trend_persistence_days}</td>
+              <td>${r.backtest_sharpe_1y.toFixed(2)}</td>
+              <td>${fmtPct(r.backtest_vs_buy_hold_pts_1y)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+
+    const analyzeRes = await fetch(`${API_BASE}/api/analyze-watchlist`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tickers }),
+    });
+    const analyzeData = await analyzeRes.json();
+    analysisEl.innerHTML = renderMarkdown(analyzeData.answer);
+  } catch (e) {
+    analysisEl.innerHTML = `<p style="color:var(--loss);">Error: ${e.message}</p>`;
+  } finally {
+    statusEl.style.display = "none";
+  }
+}
+
+// ---------- moover chat ----------
+let mooverHistory = [];
+let mooverGreeted = false;
+
+function addMooverMessage(role, text) {
+  const el = document.createElement("div");
+  el.className = role === "user" ? "msg-user" : "msg-assistant";
+  el.innerHTML = renderMarkdown(text);
+  document.getElementById("moover-messages").appendChild(el);
+  el.scrollIntoView({ behavior: "smooth", block: "end" });
+}
+
+function toggleMoover() {
+  const panel = document.getElementById("moover-panel");
+  panel.classList.toggle("open");
+  if (panel.classList.contains("open") && !mooverGreeted) {
+    mooverGreeted = true;
+    addMooverMessage("assistant",
+      "Hey, I'm Moover! I can check a ticker's technical signal, backtest it against buy-and-hold, " +
+      "flag if its edge is drifting, pull recent news, or rank your watchlist. Ask me anything.");
+  }
+}
+
+async function sendMooverMessage() {
+  const input = document.getElementById("moover-input");
+  const message = input.value.trim();
+  if (!message) return;
+  input.value = "";
+  addMooverMessage("user", message);
+
+  try {
+    const res = await fetch(`${API_BASE}/api/chat`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ history: mooverHistory, message }),
+    });
+    const d = await res.json();
+    mooverHistory = d.history;
+    addMooverMessage("assistant", d.answer);
+  } catch (e) {
+    addMooverMessage("assistant", "Error: " + e.message);
+  }
+}
+
+// ---------- wire up ----------
+document.getElementById("analyze-btn").addEventListener("click", () => analyzeTicker(document.getElementById("ticker-input").value));
+document.getElementById("ticker-input").addEventListener("keydown", e => { if (e.key === "Enter") analyzeTicker(e.target.value); });
+document.getElementById("scan-btn").addEventListener("click", scanWatchlist);
+document.getElementById("moover-toggle").addEventListener("click", toggleMoover);
+document.getElementById("moover-send").addEventListener("click", sendMooverMessage);
+document.getElementById("moover-input").addEventListener("keydown", e => { if (e.key === "Enter") sendMooverMessage(); });
+
+initCharts();
+analyzeTicker("NVDA");
+</script>
+</body>
+</html>
