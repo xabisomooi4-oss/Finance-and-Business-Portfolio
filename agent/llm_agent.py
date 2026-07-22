@@ -68,7 +68,11 @@ def _run_loop(messages: list, max_turns: int, on_tool_call=None) -> tuple[str, l
             messages=messages,
         )
 
-        messages.append({"role": "assistant", "content": response.content})
+        # Store plain dicts, not SDK objects -- the Anthropic API accepts
+        # either, but plain dicts are JSON-safe, which matters once this
+        # history needs to round-trip through a REST API (frontend <-> chat
+        # endpoint), not just stay in-process like the Streamlit version did.
+        messages.append({"role": "assistant", "content": [block.model_dump() for block in response.content]})
 
         if response.stop_reason == "max_tokens":
             print("  [warning] response was cut off by the token limit -- consider raising max_tokens further")
