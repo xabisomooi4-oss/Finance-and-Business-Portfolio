@@ -21,10 +21,7 @@ from llm_agent import run_agent, run_agent_chat
 
 app = FastAPI(title="Stock Analysis Agent API")
 
-# GitHub Pages frontend origin(s) -- update ALLOWED_ORIGINS after the
-# frontend is deployed and its real URL is known. "*" is used locally
-# during development only.
-ALLOWED_ORIGINS = ["*"]
+ALLOWED_ORIGINS = ["https://xabisomooi4-oss.github.io"]
 
 app.add_middleware(
     CORSMiddleware,
