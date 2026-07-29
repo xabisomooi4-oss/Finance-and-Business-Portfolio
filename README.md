@@ -8,6 +8,11 @@ A working portfolio of three quantitative finance projects, built end to end:
 
 This repo is the single link referenced on my resume and applications.
 
+## Live
+
+- **Stock Analysis Agent:** [xabisomooi4-oss.github.io/Finance-and-Business-Portfolio/agent](https://xabisomooi4-oss.github.io/Finance-and-Business-Portfolio/agent/) (backend on Render)
+- **Stock Valuation Model (BLK):** [public.tableau.com/app/profile/lj.mooi/viz/FinancialModellingProjects/Dashboard1](https://public.tableau.com/app/profile/lj.mooi/viz/FinancialModellingProjects/Dashboard1) — DDM + Comps dashboard with a live-recalculating valuation slider and a guided Story walkthrough
+
 ## Contents
 
 - [`docs/concept-reference.html`](docs/concept-reference.html) — a glossary of every concept behind these three projects, with diagrams. Open it directly in a browser.
@@ -23,4 +28,6 @@ This repo is the single link referenced on my resume and applications.
 
 ## Status
 
-✅ All three core projects complete: Stock Analysis Agent, Stock Valuation Model, Portfolio Analysis & Backtesting Model. Next: make the repo public and deploy the dashboards for the resume-facing link.
+✅ Stock Analysis Agent — deployed (FastAPI backend on Render, custom TradingView-style frontend on GitHub Pages).
+✅ Stock Valuation Model — deployed (Tableau Public dashboard + Story).
+🚧 Portfolio Analysis & Backtesting Model — Python analysis complete, Tableau Public dashboard not yet built.
