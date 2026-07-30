@@ -17,9 +17,10 @@ from datetime import date
 import pandas as pd
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from openpyxl.chart import LineChart, Reference
+from openpyxl.chart import LineChart, BarChart, PieChart, Reference
 from openpyxl.formatting.rule import ColorScaleRule
-from openpyxl.utils import get_column_letter
+from openpyxl.utils import get_column_letter, column_index_from_string
+from openpyxl.worksheet.datavalidation import DataValidation
 
 from data import HOLDINGS, BENCHMARK
 
@@ -558,6 +559,161 @@ chart.set_categories(cats_ref)
 ws5.add_chart(chart, f"A{r}")
 
 print("Summary sheet built.")
+
+# =============================================================== DASHBOARD =
+ws6 = wb.create_sheet("Dashboard")
+ws6.sheet_view.showGridLines = False
+ws6.column_dimensions["A"].width = 2
+for col in "BCDEFGHIJKLMN":
+    ws6.column_dimensions[col].width = 11
+
+ws6["B2"] = "Portfolio Dashboard"
+ws6["B2"].font = TITLE
+ws6["B3"] = f"Equal-weighted 8-asset portfolio vs. {BENCHMARK} — snapshot {today}"
+ws6["B3"].font = Font(name=FONT, size=9, italic=True)
+
+# --- KPI cards: label bar (gray) + big linked value (green, per the workbook's own legend) ---
+kpi_defs = [
+    ("Portfolio Return (Ann.)", f"='Risk Metrics'!B{port_return_row}", PCT1, "B"),
+    ("Sharpe Ratio", f"='Risk Metrics'!B{port_sharpe_row}", NUM2, "E"),
+    ("Diversification Benefit", f"='Risk Metrics'!B{div_benefit_row}", PCT1, "H"),
+    ("Max Drawdown", f"='Risk Metrics'!B{port_dd_row}", PCT1, "K"),
+]
+kpi_row = 5
+for kpi_label, formula, fmt, col in kpi_defs:
+    ci = column_index_from_string(col)
+    ws6.merge_cells(start_row=kpi_row, start_column=ci, end_row=kpi_row, end_column=ci + 1)
+    lbl = ws6.cell(row=kpi_row, column=ci, value=kpi_label)
+    lbl.font = Font(name=FONT, size=9, bold=True)
+    lbl.fill = HEADER_FILL
+    lbl.alignment = Alignment(vertical="center")
+    for cc in (ci, ci + 1):
+        ws6.cell(row=kpi_row, column=cc).fill = HEADER_FILL
+        ws6.cell(row=kpi_row, column=cc).border = BOX
+
+    ws6.merge_cells(start_row=kpi_row + 1, start_column=ci, end_row=kpi_row + 2, end_column=ci + 1)
+    val = ws6.cell(row=kpi_row + 1, column=ci, value=formula)
+    val.font = Font(name=FONT, size=20, bold=True, color="008000")
+    val.number_format = fmt
+    val.alignment = Alignment(vertical="center", horizontal="center")
+    for rr in (kpi_row + 1, kpi_row + 2):
+        for cc in (ci, ci + 1):
+            ws6.cell(row=rr, column=cc).border = BOX
+r = kpi_row + 4
+
+# --- Ticker selector -> INDEX/MATCH detail panel (the interactive part) ---
+section(ws6, r, 2, "HOLDING DETAIL — SELECT A TICKER", span=4)
+r += 1
+label(ws6, r, 2, "Ticker:", bold=True)
+ticker_selector_cell = f"C{r}"
+sel = ws6.cell(row=r, column=3, value=HOLDINGS[0])
+sel.font = BLUE
+sel.fill = YELLOW_FILL
+sel.border = BOX
+dv = DataValidation(type="list", formula1=f'"{",".join(HOLDINGS)}"', allow_blank=False)
+dv.error = "Pick a ticker from the dropdown."
+dv.prompt = "Choose a holding to see its weight, return, and volatility."
+ws6.add_data_validation(dv)
+dv.add(sel)
+selector_row = r
+r += 2
+
+asset_first_data_row = asset_header_row + 1
+asset_last_data_row = asset_header_row + len(HOLDINGS)
+detail_defs = [
+    ("Target Weight", f"=INDEX(Assumptions!B{first_weight_row}:B{last_weight_row},MATCH({ticker_selector_cell},Assumptions!A{first_weight_row}:A{last_weight_row},0))", PCT1),
+    ("Annualized Return", f"=INDEX('Risk Metrics'!B{asset_first_data_row}:B{asset_last_data_row},MATCH({ticker_selector_cell},'Risk Metrics'!A{asset_first_data_row}:A{asset_last_data_row},0))", PCT1),
+    ("Annualized Volatility", f"=INDEX('Risk Metrics'!C{asset_first_data_row}:C{asset_last_data_row},MATCH({ticker_selector_cell},'Risk Metrics'!A{asset_first_data_row}:A{asset_last_data_row},0))", PCT1),
+]
+for dname, dformula, dfmt in detail_defs:
+    label(ws6, r, 2, dname)
+    c = ws6.cell(row=r, column=3, value=dformula)
+    c.font = BLACK
+    c.number_format = dfmt
+    c.border = BOX
+    r += 1
+r += 2
+
+# --- Correlation heatmap, linked live from the Correlation Matrix sheet ---
+section(ws6, r, 2, "CORRELATION MATRIX", span=9)
+r += 1
+heat_header_row = r
+for t in HOLDINGS:
+    c = ws6.cell(row=r, column=2 + HOLDINGS.index(t), value=t)
+    c.font = BOLD; c.fill = HEADER_FILL; c.border = BOX
+r += 1
+heat_first_row = r
+for t_row in HOLDINGS:
+    corr_src_row = corr_first_row + HOLDINGS.index(t_row)
+    lbl = ws6.cell(row=r, column=1, value=t_row)
+    lbl.font = BOLD
+    for t_col in HOLDINGS:
+        corr_src_col = COLS[t_col]
+        c = ws6.cell(row=r, column=2 + HOLDINGS.index(t_col), value=f"='Correlation Matrix'!{corr_src_col}{corr_src_row}")
+        c.font = GREEN
+        c.number_format = NUM2
+        c.border = BOX
+    r += 1
+heat_last_row = r - 1
+heat_range = f"B{heat_first_row}:I{heat_last_row}"
+ws6.conditional_formatting.add(
+    heat_range,
+    ColorScaleRule(
+        start_type="num", start_value=-0.2, start_color="4B8EC4",
+        mid_type="num", mid_value=0.4, mid_color="F2F2F2",
+        end_type="num", end_value=1, end_color="BC8434",
+    ),
+)
+r += 2
+
+chart_anchor_row = r
+
+print("Dashboard KPI/selector/heatmap built.")
+
+# --- Equity curve chart ---
+eq_chart = LineChart()
+eq_chart.title = f"Portfolio vs. {BENCHMARK} — Growth of ${STARTING_VALUE:,}"
+eq_chart.y_axis.title = "Value ($)"
+eq_chart.style = 2
+eq_chart.height = 8.5
+eq_chart.width = 17
+port_eq_ref2 = Reference(ws2, min_col=12, min_row=ret_header_row, max_row=ret_last_row)
+spy_eq_ref2 = Reference(ws2, min_col=15, min_row=ret_header_row, max_row=ret_last_row)
+eq_chart.add_data(port_eq_ref2, titles_from_data=True)
+eq_chart.add_data(spy_eq_ref2, titles_from_data=True)
+eq_chart.set_categories(Reference(ws2, min_col=1, min_row=ret_first_row, max_row=ret_last_row))
+ws6.add_chart(eq_chart, f"B{chart_anchor_row}")
+
+# --- Return-by-holding bar chart ---
+ret_chart = BarChart()
+ret_chart.type = "col"
+ret_chart.title = "Annualized Return by Holding"
+ret_chart.style = 10
+ret_chart.height = 8.5
+ret_chart.width = 12
+ret_data_ref = Reference(ws4, min_col=2, min_row=asset_header_row, max_row=asset_last_data_row)
+ret_cats_ref = Reference(ws4, min_col=1, min_row=asset_first_data_row, max_row=asset_last_data_row)
+ret_chart.add_data(ret_data_ref, titles_from_data=True)
+ret_chart.set_categories(ret_cats_ref)
+ret_chart.legend = None
+ws6.add_chart(ret_chart, f"J{chart_anchor_row}")
+
+# --- Allocation pie chart (all slices are equal by construction -- fine for a pie) ---
+pie_chart = PieChart()
+pie_chart.title = "Asset Allocation"
+pie_chart.height = 8.5
+pie_chart.width = 12
+pie_data_ref = Reference(ws, min_col=2, min_row=first_weight_row - 1, max_row=last_weight_row)
+pie_cats_ref = Reference(ws, min_col=1, min_row=first_weight_row, max_row=last_weight_row)
+pie_chart.add_data(pie_data_ref, titles_from_data=True)
+pie_chart.set_categories(pie_cats_ref)
+ws6.add_chart(pie_chart, f"J{chart_anchor_row + 18}")
+
+print("Dashboard charts built.")
+
+# Move Dashboard to the first tab position
+wb.move_sheet("Dashboard", offset=-(len(wb.sheetnames) - 1))
+wb.active = 0
 
 wb.save("Portfolio_Backtesting_Model.xlsx")
 print("\nSaved Portfolio_Backtesting_Model.xlsx")
