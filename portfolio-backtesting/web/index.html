@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Analysis &amp; Backtesting Model</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --surface-0: #0A0E14;
+    --surface-1: #131A24;
+    --surface-2: #1B2430;
+    --border: rgba(255,255,255,0.08);
+    --text-primary: #E8EDF2;
+    --text-secondary: #9AA7B8;
+    --text-muted: #5C6B7A;
+    --series-portfolio: #3987e5;
+    --series-benchmark: #199e70;
+    --series-holdings: #9085e9;
+    --gain: #2FAE72;
+    --loss: #EF4444;
+    --diverge-neg: #4B8EC4;
+    --diverge-mid: #2A3441;
+    --diverge-pos: #BC8434;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: radial-gradient(circle at 15% 10%, #0F1520 0%, var(--surface-0) 45%),
+                radial-gradient(circle at 85% 90%, #0D1219 0%, var(--surface-0) 55%);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    padding: 32px 24px 64px;
+  }
+  .page { max-width: 1280px; margin: 0 auto; }
+
+  header { margin-bottom: 28px; }
+  .eyebrow {
+    font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--series-portfolio); font-weight: 600; margin-bottom: 6px;
+  }
+  h1 { font-size: 28px; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .subtitle { font-size: 14px; color: var(--text-secondary); margin: 0 0 18px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+  .badge {
+    font-size: 12px; font-weight: 600; color: var(--text-secondary);
+    background: var(--surface-1); border: 1px solid var(--border);
+    padding: 5px 12px; border-radius: 999px;
+  }
+
+  .hero-row {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+    margin: 26px 0 22px;
+  }
+  .stat-tile {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px 20px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  }
+  .stat-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; }
+  .stat-value { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; }
+  .stat-sub { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+  .stat-sub .cmp-up { color: var(--gain); }
+  .stat-sub .cmp-down { color: var(--loss); }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .card {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 16px; padding: 22px 24px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.28);
+  }
+  .card.full { grid-column: 1 / -1; }
+  .card-title { font-size: 15px; font-weight: 700; margin: 0 0 2px; }
+  .card-desc { font-size: 12.5px; color: var(--text-secondary); margin: 0 0 16px; }
+  .legend-row { display: flex; gap: 18px; margin-bottom: 14px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+  .chart-wrap { position: relative; }
+
+  .mini-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .mini-metric { background: var(--surface-2); border-radius: 12px; padding: 14px 16px; }
+  .mini-metric-label { font-size: 11.5px; color: var(--text-secondary); margin-bottom: 10px; font-weight: 600; }
+  .mini-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .mini-bar-name { width: 56px; font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
+  .mini-bar-track { flex: 1; height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
+  .mini-bar-fill { height: 100%; border-radius: 4px; }
+  .mini-bar-value { width: 52px; text-align: right; font-size: 11.5px; font-weight: 600; flex-shrink: 0; }
+
+  .heatmap-grid { display: grid; grid-template-columns: 44px repeat(8, 1fr); gap: 3px; font-size: 10.5px; }
+  .heatmap-cell {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    border-radius: 4px; font-weight: 600; color: #0A0E14; position: relative;
+  }
+  .heatmap-label { display: flex; align-items: center; justify-content: flex-end; padding-right: 4px; color: var(--text-secondary); font-weight: 600; }
+  .heatmap-colhead { display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px; color: var(--text-secondary); font-weight: 600; writing-mode: vertical-rl; }
+
+  .alloc-list { display: flex; flex-direction: column; gap: 10px; }
+  .alloc-row { display: flex; align-items: center; gap: 12px; }
+  .alloc-ticker { width: 54px; font-size: 12.5px; font-weight: 700; flex-shrink: 0; }
+  .alloc-track { flex: 1; height: 20px; background: rgba(255,255,255,0.06); border-radius: 6px; overflow: hidden; }
+  .alloc-fill { height: 100%; border-radius: 6px; background: var(--series-holdings); }
+  .alloc-pct { width: 46px; text-align: right; font-size: 12px; color: var(--text-secondary); flex-shrink: 0; }
+
+  footer { text-align: center; font-size: 11.5px; color: var(--text-muted); margin-top: 36px; }
+
+  @media (max-width: 860px) {
+    .hero-row { grid-template-columns: repeat(2, 1fr); }
+    .grid { grid-template-columns: 1fr; }
+    .mini-metrics { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="eyebrow">Portfolio Analysis &amp; Backtesting Model</div>
+    <h1>Equal-Weighted 8-Asset Portfolio vs. SPY</h1>
+    <p class="subtitle">Quarterly-rebalanced backtest, covariance-based risk decomposition, and pairwise correlation analysis · 3-year period</p>
+    <div class="badges" id="holdingBadges"></div>
+  </header>
+
+  <div class="hero-row" id="heroStats"></div>
+
+  <div class="grid">
+
+    <div class="card full">
+      <div class="card-title">Backtesting Performance</div>
+      <div class="card-desc">Growth of $10,000 &mdash; equal-weight portfolio vs. SPY, quarterly rebalanced</div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-dot" style="background:var(--series-portfolio)"></span>Portfolio</div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--series-benchmark)"></span>SPY</div>
+      </div>
+      <div class="chart-wrap" style="height:280px"><canvas id="equityChart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Key Portfolio Metrics</div>
+      <div class="card-desc">Portfolio vs. SPY across four risk/return dimensions</div>
+      <div class="mini-metrics" id="miniMetrics"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Risk vs. Return</div>
+      <div class="card-desc">Each holding, the portfolio, and SPY &mdash; annualized volatility vs. return</div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-dot" style="background:var(--series-holdings)"></span>Individual holding</div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--series-portfolio)"></span>Portfolio</div>
+        <div class="legend-item"><span class="legend-dot" style="background:var(--series-benchmark)"></span>SPY</div>
+      </div>
+      <div class="chart-wrap" style="height:260px"><canvas id="scatterChart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Correlation Matrix</div>
+      <div class="card-desc">Pairwise correlation of monthly returns &mdash; the real diversification diagnostic</div>
+      <div id="heatmap"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Asset Allocation</div>
+      <div class="card-desc">Equal-weighted target allocation across all 8 holdings</div>
+      <div class="alloc-list" id="allocList"></div>
+    </div>
+
+  </div>
+
+  <footer>Data: yfinance · Live snapshot · Analysis only, not investment advice</footer>
+</div>
+
+<script>
+// ---------------------------------------------------------------- data --
+const HOLDINGS = ["NVDA","AAPL","MSFT","TSLA","AMD","GOOGL","GLD","TLT"];
+
+const RISK_COMPARISON = {
+  portfolio: { return: 31.96, vol: 22.4, sharpe: 1.219, maxdd: -24.32 },
+  benchmark: { return: 19.14, vol: 15.31, sharpe: 0.945, maxdd: -18.76 },
+};
+const DIVERSIFICATION = { realVol: 22.4, naiveVol: 34.72 };
+
+const ASSET_RISK_RETURN = {
+  NVDA:  { return: 55.42, vol: 39.03 },
+  AAPL:  { return: 23.64, vol: 23.92 },
+  MSFT:  { return: 10.10, vol: 25.22 },
+  TSLA:  { return: 19.83, vol: 53.67 },
+  AMD:   { return: 72.16, vol: 72.81 },
+  GOOGL: { return: 36.25, vol: 32.43 },
+  GLD:   { return: 26.54, vol: 18.41 },
+  TLT:   { return: 0.42,  vol: 13.93 },
+};
+
+const HOLDINGS_WEIGHTS = HOLDINGS.map(t => ({ ticker: t, weight: 12.5 }));
+
+const EQUITY_CURVE = [{"date":"2023-07-24","portfolio_equity":10000.0,"benchmark_equity":10000.0,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2023-07-27","portfolio_equity":9979.32,"benchmark_equity":9962.35,"portfolio_drawdown_pct":-0.978,"benchmark_drawdown_pct":-0.663},{"date":"2023-08-01","portfolio_equity":10141.96,"benchmark_equity":10050.2,"portfolio_drawdown_pct":-0.479,"benchmark_drawdown_pct":-0.286},{"date":"2023-08-04","portfolio_equity":9860.68,"benchmark_equity":9837.3,"portfolio_drawdown_pct":-3.239,"benchmark_drawdown_pct":-2.398},{"date":"2023-08-09","portfolio_equity":9649.25,"benchmark_equity":9813.96,"portfolio_drawdown_pct":-5.314,"benchmark_drawdown_pct":-2.63},{"date":"2023-08-14","portfolio_equity":9692.03,"benchmark_equity":9865.92,"portfolio_drawdown_pct":-4.894,"benchmark_drawdown_pct":-2.115},{"date":"2023-08-17","portfolio_equity":9393.07,"benchmark_equity":9605.68,"portfolio_drawdown_pct":-7.828,"benchmark_drawdown_pct":-4.696},{"date":"2023-08-22","portfolio_equity":9572.38,"benchmark_equity":9646.63,"portfolio_drawdown_pct":-6.068,"benchmark_drawdown_pct":-4.29},{"date":"2023-08-25","portfolio_equity":9622.9,"benchmark_equity":9686.7,"portfolio_drawdown_pct":-5.572,"benchmark_drawdown_pct":-3.893},{"date":"2023-08-30","portfolio_equity":10020.32,"benchmark_equity":9929.77,"portfolio_drawdown_pct":-1.673,"benchmark_drawdown_pct":-1.481},{"date":"2023-09-05","portfolio_equity":10033.79,"benchmark_equity":9890.8,"portfolio_drawdown_pct":-1.54,"benchmark_drawdown_pct":-1.868},{"date":"2023-09-08","portfolio_equity":9801.15,"benchmark_equity":9808.9,"portfolio_drawdown_pct":-3.823,"benchmark_drawdown_pct":-2.68},{"date":"2023-09-13","portfolio_equity":9898.18,"benchmark_equity":9830.69,"portfolio_drawdown_pct":-2.871,"benchmark_drawdown_pct":-2.464},{"date":"2023-09-18","portfolio_equity":9788.72,"benchmark_equity":9801.74,"portfolio_drawdown_pct":-3.945,"benchmark_drawdown_pct":-2.751},{"date":"2023-09-21","portfolio_equity":9406.25,"benchmark_equity":9531.3,"portfolio_drawdown_pct":-7.698,"benchmark_drawdown_pct":-5.434},{"date":"2023-09-26","portfolio_equity":9282.06,"benchmark_equity":9409.56,"portfolio_drawdown_pct":-8.917,"benchmark_drawdown_pct":-6.642},{"date":"2023-09-29","portfolio_equity":9428.7,"benchmark_equity":9444.91,"portfolio_drawdown_pct":-7.478,"benchmark_drawdown_pct":-6.292},{"date":"2023-10-04","portfolio_equity":9533.0,"benchmark_equity":9382.6,"portfolio_drawdown_pct":-6.455,"benchmark_drawdown_pct":-6.91},{"date":"2023-10-09","portfolio_equity":9730.7,"benchmark_equity":9551.19,"portfolio_drawdown_pct":-4.515,"benchmark_drawdown_pct":-5.237},{"date":"2023-10-12","portfolio_equity":9808.45,"benchmark_equity":9581.45,"portfolio_drawdown_pct":-3.752,"benchmark_drawdown_pct":-4.937},{"date":"2023-10-17","portfolio_equity":9675.45,"benchmark_equity":9633.6,"portfolio_drawdown_pct":-5.057,"benchmark_drawdown_pct":-4.42},{"date":"2023-10-20","portfolio_equity":9289.3,"benchmark_equity":9305.94,"portfolio_drawdown_pct":-8.846,"benchmark_drawdown_pct":-7.67},{"date":"2023-10-25","portfolio_equity":9189.76,"benchmark_equity":9225.51,"portfolio_drawdown_pct":-9.823,"benchmark_drawdown_pct":-8.468},{"date":"2023-10-30","portfolio_equity":9091.67,"benchmark_equity":9182.21,"portfolio_drawdown_pct":-10.785,"benchmark_drawdown_pct":-8.898},{"date":"2023-11-02","portfolio_equity":9544.77,"benchmark_equity":9517.38,"portfolio_drawdown_pct":-6.339,"benchmark_drawdown_pct":-5.573},{"date":"2023-11-07","portfolio_equity":9802.14,"benchmark_equity":9653.7,"portfolio_drawdown_pct":-3.814,"benchmark_drawdown_pct":-4.22},{"date":"2023-11-10","portfolio_equity":9949.89,"benchmark_equity":9735.01,"portfolio_drawdown_pct":-2.364,"benchmark_drawdown_pct":-3.413},{"date":"2023-11-15","portfolio_equity":10144.8,"benchmark_equity":9935.41,"portfolio_drawdown_pct":-0.451,"benchmark_drawdown_pct":-1.425},{"date":"2023-11-20","portfolio_equity":10299.41,"benchmark_equity":10036.6,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":-0.421},{"date":"2023-11-24","portfolio_equity":10234.24,"benchmark_equity":10059.58,"portfolio_drawdown_pct":-0.633,"benchmark_drawdown_pct":-0.193},{"date":"2023-11-29","portfolio_equity":10354.04,"benchmark_equity":10044.33,"portfolio_drawdown_pct":-0.063,"benchmark_drawdown_pct":-0.344},{"date":"2023-12-04","portfolio_equity":10086.76,"benchmark_equity":10090.29,"portfolio_drawdown_pct":-2.643,"benchmark_drawdown_pct":-0.525},{"date":"2023-12-07","portfolio_equity":10409.23,"benchmark_equity":10124.31,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":-0.19},{"date":"2023-12-12","portfolio_equity":10452.09,"benchmark_equity":10254.01,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2023-12-15","portfolio_equity":10676.81,"benchmark_equity":10411.6,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":-0.165},{"date":"2023-12-20","portfolio_equity":10629.04,"benchmark_equity":10387.87,"portfolio_drawdown_pct":-1.381,"benchmark_drawdown_pct":-1.386},{"date":"2023-12-26","portfolio_equity":10841.91,"benchmark_equity":10551.81,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2023-12-29","portfolio_equity":10838.98,"benchmark_equity":10544.26,"portfolio_drawdown_pct":-0.711,"benchmark_drawdown_pct":-0.289},{"date":"2024-01-04","portfolio_equity":10463.2,"benchmark_equity":10366.13,"portfolio_drawdown_pct":-4.153,"benchmark_drawdown_pct":-1.974},{"date":"2024-01-09","portfolio_equity":10786.63,"benchmark_equity":10512.54,"portfolio_drawdown_pct":-1.19,"benchmark_drawdown_pct":-0.589},{"date":"2024-01-12","portfolio_equity":10796.06,"benchmark_equity":10574.66,"portfolio_drawdown_pct":-1.104,"benchmark_drawdown_pct":-0.002},{"date":"2024-01-18","portfolio_equity":10964.07,"benchmark_equity":10570.44,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":-0.042},{"date":"2024-01-23","portfolio_equity":11182.02,"benchmark_equity":10756.12,"portfolio_drawdown_pct":-0.262,"benchmark_drawdown_pct":0.0},{"date":"2024-01-26","portfolio_equity":11194.03,"benchmark_equity":10812.69,"portfolio_drawdown_pct":-1.046,"benchmark_drawdown_pct":-0.127},{"date":"2024-01-31","portfolio_equity":10994.85,"benchmark_equity":10712.2,"portfolio_drawdown_pct":-2.987,"benchmark_drawdown_pct":-1.708},{"date":"2024-02-05","portfolio_equity":11284.66,"benchmark_equity":10926.72,"portfolio_drawdown_pct":-0.43,"benchmark_drawdown_pct":-0.364},{"date":"2024-02-08","portfolio_equity":11355.37,"benchmark_equity":11054.72,"portfolio_drawdown_pct":-0.255,"benchmark_drawdown_pct":0.0},{"date":"2024-02-13","portfolio_equity":11306.21,"benchmark_equity":10960.66,"portfolio_drawdown_pct":-1.898,"benchmark_drawdown_pct":-1.421},{"date":"2024-02-16","portfolio_equity":11376.73,"benchmark_equity":11081.12,"portfolio_drawdown_pct":-1.287,"benchmark_drawdown_pct":-0.498},{"date":"2024-02-22","portfolio_equity":11681.81,"benchmark_equity":11258.37,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2024-02-27","portfolio_equity":11592.84,"benchmark_equity":11245.72,"portfolio_drawdown_pct":-0.762,"benchmark_drawdown_pct":-0.181},{"date":"2024-03-01","portfolio_equity":11984.12,"benchmark_equity":11377.05,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2024-03-06","portfolio_equity":11975.6,"benchmark_equity":11308.28,"portfolio_drawdown_pct":-0.071,"benchmark_drawdown_pct":-0.604},{"date":"2024-03-11","portfolio_equity":11903.25,"benchmark_equity":11342.22,"portfolio_drawdown_pct":-2.135,"benchmark_drawdown_pct":-0.686},{"date":"2024-03-14","portfolio_equity":11855.31,"benchmark_equity":11423.64,"portfolio_drawdown_pct":-2.529,"benchmark_drawdown_pct":-0.354},{"date":"2024-03-19","portfolio_equity":11932.82,"benchmark_equity":11476.04,"portfolio_drawdown_pct":-1.891,"benchmark_drawdown_pct":0.0},{"date":"2024-03-22","portfolio_equity":12102.18,"benchmark_equity":11598.44,"portfolio_drawdown_pct":-0.499,"benchmark_drawdown_pct":-0.19},{"date":"2024-03-27","portfolio_equity":12051.45,"benchmark_equity":11642.05,"portfolio_drawdown_pct":-0.916,"benchmark_drawdown_pct":0.0},{"date":"2024-04-02","portfolio_equity":11951.99,"benchmark_equity":11545.7,"portfolio_drawdown_pct":-1.734,"benchmark_drawdown_pct":-0.828},{"date":"2024-04-05","portfolio_equity":11865.32,"benchmark_equity":11536.57,"portfolio_drawdown_pct":-2.446,"benchmark_drawdown_pct":-0.906},{"date":"2024-04-10","portfolio_equity":11877.75,"benchmark_equity":11440.66,"portfolio_drawdown_pct":-2.344,"benchmark_drawdown_pct":-1.73},{"date":"2024-04-15","portfolio_equity":11729.3,"benchmark_equity":11225.48,"portfolio_drawdown_pct":-3.565,"benchmark_drawdown_pct":-3.578},{"date":"2024-04-18","portfolio_equity":11487.45,"benchmark_equity":11115.77,"portfolio_drawdown_pct":-5.553,"benchmark_drawdown_pct":-4.521},{"date":"2024-04-23","portfolio_equity":11379.03,"benchmark_equity":11252.18,"portfolio_drawdown_pct":-6.445,"benchmark_drawdown_pct":-3.349},{"date":"2024-04-26","portfolio_equity":11864.6,"benchmark_equity":11310.26,"portfolio_drawdown_pct":-2.452,"benchmark_drawdown_pct":-2.85},{"date":"2024-05-01","portfolio_equity":11645.02,"benchmark_equity":11134.24,"portfolio_drawdown_pct":-4.258,"benchmark_drawdown_pct":-4.362},{"date":"2024-05-06","portfolio_equity":12187.68,"benchmark_equity":11495.18,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":-1.262},{"date":"2024-05-09","portfolio_equity":12052.49,"benchmark_equity":11575.29,"portfolio_drawdown_pct":-1.109,"benchmark_drawdown_pct":-0.573},{"date":"2024-05-14","portfolio_equity":12208.5,"benchmark_equity":11644.94,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2024-05-17","portfolio_equity":12464.29,"benchmark_equity":11781.8,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":-0.062},{"date":"2024-05-22","portfolio_equity":12565.1,"benchmark_equity":11790.25,"portfolio_drawdown_pct":-0.838,"benchmark_drawdown_pct":-0.288},{"date":"2024-05-28","portfolio_equity":12854.18,"benchmark_equity":11789.81,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":-0.292},{"date":"2024-05-31","portfolio_equity":12666.64,"benchmark_equity":11735.51,"portfolio_drawdown_pct":-1.459,"benchmark_drawdown_pct":-0.751},{"date":"2024-06-05","portfolio_equity":13010.23,"benchmark_equity":11897.96,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2024-06-10","portfolio_equity":12857.23,"benchmark_equity":11919.99,"portfolio_drawdown_pct":-1.317,"benchmark_drawdown_pct":0.0},{"date":"2024-06-13","portfolio_equity":13338.55,"benchmark_equity":12071.09,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2024-06-18","portfolio_equity":13461.04,"benchmark_equity":12205.49,"portfolio_drawdown_pct":-0.048,"benchmark_drawdown_pct":0.0},{"date":"2024-06-24","portfolio_equity":13186.4,"benchmark_equity":12116.5,"portfolio_drawdown_pct":-2.087,"benchmark_drawdown_pct":-0.729},{"date":"2024-06-27","portfolio_equity":13519.86,"benchmark_equity":12197.54,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":-0.065},{"date":"2024-07-02","portfolio_equity":13859.91,"benchmark_equity":12256.48,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2024-07-08","portfolio_equity":14448.91,"benchmark_equity":12396.45,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2024-07-11","portfolio_equity":14347.25,"benchmark_equity":12423.24,"portfolio_drawdown_pct":-2.731,"benchmark_drawdown_pct":-0.862},{"date":"2024-07-16","portfolio_equity":14493.44,"benchmark_equity":12610.32,"portfolio_drawdown_pct":-1.74,"benchmark_drawdown_pct":0.0},{"date":"2024-07-19","portfolio_equity":13700.78,"benchmark_equity":12256.03,"portfolio_drawdown_pct":-7.114,"benchmark_drawdown_pct":-2.81},{"date":"2024-07-24","portfolio_equity":13233.72,"benchmark_equity":12082.79,"portfolio_drawdown_pct":-10.28,"benchmark_drawdown_pct":-4.183},{"date":"2024-07-29","portfolio_equity":13269.21,"benchmark_equity":12161.6,"portfolio_drawdown_pct":-10.039,"benchmark_drawdown_pct":-3.558},{"date":"2024-08-01","portfolio_equity":13090.94,"benchmark_equity":12122.53,"portfolio_drawdown_pct":-11.248,"benchmark_drawdown_pct":-3.868},{"date":"2024-08-06","portfolio_equity":12576.23,"benchmark_equity":11656.84,"portfolio_drawdown_pct":-14.738,"benchmark_drawdown_pct":-7.561},{"date":"2024-08-09","portfolio_equity":12789.42,"benchmark_equity":11898.83,"portfolio_drawdown_pct":-13.292,"benchmark_drawdown_pct":-5.642},{"date":"2024-08-14","portfolio_equity":13148.08,"benchmark_equity":12139.05,"portfolio_drawdown_pct":-10.861,"benchmark_drawdown_pct":-3.737},{"date":"2024-08-19","portfolio_equity":13795.31,"benchmark_equity":12493.12,"portfolio_drawdown_pct":-6.473,"benchmark_drawdown_pct":-0.929},{"date":"2024-08-22","portfolio_equity":13491.07,"benchmark_equity":12417.44,"portfolio_drawdown_pct":-8.535,"benchmark_drawdown_pct":-1.53},{"date":"2024-08-27","portfolio_equity":13593.34,"benchmark_equity":12536.65,"portfolio_drawdown_pct":-7.842,"benchmark_drawdown_pct":-0.584},{"date":"2024-08-30","portfolio_equity":13458.05,"benchmark_equity":12583.98,"portfolio_drawdown_pct":-8.759,"benchmark_drawdown_pct":-0.209},{"date":"2024-09-05","portfolio_equity":13263.32,"benchmark_equity":12269.87,"portfolio_drawdown_pct":-10.079,"benchmark_drawdown_pct":-2.7},{"date":"2024-09-10","portfolio_equity":13225.96,"benchmark_equity":12251.57,"portfolio_drawdown_pct":-10.333,"benchmark_drawdown_pct":-2.845},{"date":"2024-09-13","portfolio_equity":13712.53,"benchmark_equity":12546.7,"portfolio_drawdown_pct":-7.034,"benchmark_drawdown_pct":-0.505},{"date":"2024-09-18","portfolio_equity":13535.05,"benchmark_equity":12533.08,"portfolio_drawdown_pct":-8.237,"benchmark_drawdown_pct":-0.613},{"date":"2024-09-23","portfolio_equity":13969.31,"benchmark_equity":12756.72,"portfolio_drawdown_pct":-5.293,"benchmark_drawdown_pct":0.0},{"date":"2024-09-26","portfolio_equity":14252.46,"benchmark_equity":12815.61,"portfolio_drawdown_pct":-3.373,"benchmark_drawdown_pct":0.0},{"date":"2024-10-01","portfolio_equity":14098.5,"benchmark_equity":12733.2,"portfolio_drawdown_pct":-4.417,"benchmark_drawdown_pct":-0.896},{"date":"2024-10-04","portfolio_equity":14209.99,"benchmark_equity":12830.84,"portfolio_drawdown_pct":-3.661,"benchmark_drawdown_pct":-0.136},{"date":"2024-10-09","portfolio_equity":14185.04,"benchmark_equity":12923.99,"portfolio_drawdown_pct":-3.83,"benchmark_drawdown_pct":0.0},{"date":"2024-10-14","portfolio_equity":14123.72,"benchmark_equity":13084.78,"portfolio_drawdown_pct":-4.246,"benchmark_drawdown_pct":0.0},{"date":"2024-10-17","portfolio_equity":14021.93,"benchmark_equity":13040.66,"portfolio_drawdown_pct":-4.936,"benchmark_drawdown_pct":-0.337},{"date":"2024-10-22","portfolio_equity":14185.32,"benchmark_equity":13062.38,"portfolio_drawdown_pct":-3.829,"benchmark_drawdown_pct":-0.217},{"date":"2024-10-25","portfolio_equity":14490.2,"benchmark_equity":12966.54,"portfolio_drawdown_pct":-1.762,"benchmark_drawdown_pct":-0.949},{"date":"2024-10-30","portfolio_equity":14436.09,"benchmark_equity":12988.26,"portfolio_drawdown_pct":-2.128,"benchmark_drawdown_pct":-0.783},{"date":"2024-11-04","portfolio_equity":13953.88,"benchmark_equity":12759.85,"portfolio_drawdown_pct":-5.398,"benchmark_drawdown_pct":-2.528},{"date":"2024-11-07","portfolio_equity":14806.66,"benchmark_equity":13337.59,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2024-11-12","portfolio_equity":14839.74,"benchmark_equity":13366.48,"portfolio_drawdown_pct":-0.993,"benchmark_drawdown_pct":-0.311},{"date":"2024-11-15","portfolio_equity":14437.2,"benchmark_equity":13116.8,"portfolio_drawdown_pct":-3.679,"benchmark_drawdown_pct":-2.173},{"date":"2024-11-20","portfolio_equity":14804.82,"benchmark_equity":13223.16,"portfolio_drawdown_pct":-1.226,"benchmark_drawdown_pct":-1.38},{"date":"2024-11-25","portfolio_equity":14658.61,"benchmark_equity":13380.59,"portfolio_drawdown_pct":-2.202,"benchmark_drawdown_pct":-0.205},{"date":"2024-11-29","portfolio_equity":14806.44,"benchmark_equity":13493.0,"portfolio_drawdown_pct":-1.215,"benchmark_drawdown_pct":0.0},{"date":"2024-12-04","portfolio_equity":15229.82,"benchmark_equity":13607.43,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2024-12-09","portfolio_equity":15284.06,"benchmark_equity":13540.7,"portfolio_drawdown_pct":-0.536,"benchmark_drawdown_pct":-0.515},{"date":"2024-12-12","portfolio_equity":15624.76,"benchmark_equity":13532.86,"portfolio_drawdown_pct":-0.892,"benchmark_drawdown_pct":-0.573},{"date":"2024-12-17","portfolio_equity":15950.7,"benchmark_equity":13531.97,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":-0.579},{"date":"2024-12-20","portfolio_equity":15389.82,"benchmark_equity":13282.27,"portfolio_drawdown_pct":-3.516,"benchmark_drawdown_pct":-2.414},{"date":"2024-12-26","portfolio_equity":15840.32,"benchmark_equity":13511.23,"portfolio_drawdown_pct":-0.692,"benchmark_drawdown_pct":-0.731},{"date":"2024-12-31","portfolio_equity":15148.86,"benchmark_equity":13168.36,"portfolio_drawdown_pct":-5.027,"benchmark_drawdown_pct":-3.251},{"date":"2025-01-06","portfolio_equity":15595.72,"benchmark_equity":13376.87,"portfolio_drawdown_pct":-2.226,"benchmark_drawdown_pct":-1.719},{"date":"2025-01-10","portfolio_equity":14974.91,"benchmark_equity":13042.76,"portfolio_drawdown_pct":-6.118,"benchmark_drawdown_pct":-4.173},{"date":"2025-01-15","portfolio_equity":15307.32,"benchmark_equity":13318.9,"portfolio_drawdown_pct":-4.034,"benchmark_drawdown_pct":-2.145},{"date":"2025-01-21","portfolio_equity":15368.11,"benchmark_equity":13549.65,"portfolio_drawdown_pct":-3.652,"benchmark_drawdown_pct":-0.449},{"date":"2025-01-24","portfolio_equity":15416.14,"benchmark_equity":13660.19,"portfolio_drawdown_pct":-3.351,"benchmark_drawdown_pct":-0.292},{"date":"2025-01-29","portfolio_equity":15056.69,"benchmark_equity":13521.79,"portfolio_drawdown_pct":-5.605,"benchmark_drawdown_pct":-1.302},{"date":"2025-02-03","portfolio_equity":14769.97,"benchmark_equity":13431.02,"portfolio_drawdown_pct":-7.402,"benchmark_drawdown_pct":-1.965},{"date":"2025-02-06","portfolio_equity":14860.29,"benchmark_equity":13623.12,"portfolio_drawdown_pct":-6.836,"benchmark_drawdown_pct":-0.563},{"date":"2025-02-11","portfolio_equity":14633.24,"benchmark_equity":13600.43,"portfolio_drawdown_pct":-8.26,"benchmark_drawdown_pct":-0.728},{"date":"2025-02-14","portfolio_equity":14961.43,"benchmark_equity":13699.06,"portfolio_drawdown_pct":-6.202,"benchmark_drawdown_pct":-0.008},{"date":"2025-02-20","portfolio_equity":15053.66,"benchmark_equity":13714.34,"portfolio_drawdown_pct":-5.624,"benchmark_drawdown_pct":-0.416},{"date":"2025-02-25","portfolio_equity":14341.37,"benchmark_equity":13351.7,"portfolio_drawdown_pct":-10.089,"benchmark_drawdown_pct":-3.049},{"date":"2025-02-28","portfolio_equity":14092.19,"benchmark_equity":13350.35,"portfolio_drawdown_pct":-11.652,"benchmark_drawdown_pct":-3.059},{"date":"2025-03-05","portfolio_equity":13965.64,"benchmark_equity":13100.5,"portfolio_drawdown_pct":-12.445,"benchmark_drawdown_pct":-4.873},{"date":"2025-03-10","portfolio_equity":13227.66,"benchmark_equity":12595.41,"portfolio_drawdown_pct":-17.072,"benchmark_drawdown_pct":-8.541},{"date":"2025-03-13","portfolio_equity":13349.38,"benchmark_equity":12389.6,"portfolio_drawdown_pct":-16.309,"benchmark_drawdown_pct":-10.035},{"date":"2025-03-18","portfolio_equity":13422.17,"benchmark_equity":12605.3,"portfolio_drawdown_pct":-15.852,"benchmark_drawdown_pct":-8.469},{"date":"2025-03-21","portfolio_equity":13708.45,"benchmark_equity":12709.92,"portfolio_drawdown_pct":-14.057,"benchmark_drawdown_pct":-7.709},{"date":"2025-03-26","portfolio_equity":13815.4,"benchmark_equity":12813.82,"portfolio_drawdown_pct":-13.387,"benchmark_drawdown_pct":-6.955},{"date":"2025-03-31","portfolio_equity":13514.83,"benchmark_equity":12606.48,"portfolio_drawdown_pct":-15.271,"benchmark_drawdown_pct":-8.461},{"date":"2025-04-03","portfolio_equity":13132.33,"benchmark_equity":12095.14,"portfolio_drawdown_pct":-17.669,"benchmark_drawdown_pct":-12.174},{"date":"2025-04-08","portfolio_equity":11979.95,"benchmark_equity":11188.74,"portfolio_drawdown_pct":-24.894,"benchmark_drawdown_pct":-18.755},{"date":"2025-04-11","portfolio_equity":13246.42,"benchmark_equity":12032.94,"portfolio_drawdown_pct":-16.954,"benchmark_drawdown_pct":-12.625},{"date":"2025-04-16","portfolio_equity":12927.34,"benchmark_equity":11846.34,"portfolio_drawdown_pct":-18.954,"benchmark_drawdown_pct":-13.98},{"date":"2025-04-22","portfolio_equity":12770.32,"benchmark_equity":11882.17,"portfolio_drawdown_pct":-19.939,"benchmark_drawdown_pct":-13.72},{"date":"2025-04-25","portfolio_equity":13743.6,"benchmark_equity":12409.29,"portfolio_drawdown_pct":-13.837,"benchmark_drawdown_pct":-9.892},{"date":"2025-04-30","portfolio_equity":13714.83,"benchmark_equity":12497.18,"portfolio_drawdown_pct":-14.017,"benchmark_drawdown_pct":-9.254},{"date":"2025-05-05","portfolio_equity":13954.48,"benchmark_equity":12699.33,"portfolio_drawdown_pct":-12.515,"benchmark_drawdown_pct":-7.786},{"date":"2025-05-08","portfolio_equity":13928.49,"benchmark_equity":12734.26,"portfolio_drawdown_pct":-12.678,"benchmark_drawdown_pct":-7.533},{"date":"2025-05-13","portfolio_equity":14798.94,"benchmark_equity":13225.1,"portfolio_drawdown_pct":-7.221,"benchmark_drawdown_pct":-3.969},{"date":"2025-05-16","portfolio_equity":15129.3,"benchmark_equity":13390.97,"portfolio_drawdown_pct":-5.15,"benchmark_drawdown_pct":-2.764},{"date":"2025-05-21","portfolio_equity":14861.76,"benchmark_equity":13135.4,"portfolio_drawdown_pct":-6.827,"benchmark_drawdown_pct":-4.62},{"date":"2025-05-27","portfolio_equity":15239.69,"benchmark_equity":13322.23,"portfolio_drawdown_pct":-4.458,"benchmark_drawdown_pct":-3.263},{"date":"2025-05-30","portfolio_equity":15059.57,"benchmark_equity":13282.57,"portfolio_drawdown_pct":-5.587,"benchmark_drawdown_pct":-3.551},{"date":"2025-06-04","portfolio_equity":15241.93,"benchmark_equity":13429.95,"portfolio_drawdown_pct":-4.444,"benchmark_drawdown_pct":-2.481},{"date":"2025-06-09","portfolio_equity":15228.65,"benchmark_equity":13514.46,"portfolio_drawdown_pct":-4.527,"benchmark_drawdown_pct":-1.867},{"date":"2025-06-12","portfolio_equity":15352.64,"benchmark_equity":13606.19,"portfolio_drawdown_pct":-3.749,"benchmark_drawdown_pct":-1.201},{"date":"2025-06-17","portfolio_equity":15420.13,"benchmark_equity":13466.01,"portfolio_drawdown_pct":-3.326,"benchmark_drawdown_pct":-2.219},{"date":"2025-06-23","portfolio_equity":15635.28,"benchmark_equity":13565.04,"portfolio_drawdown_pct":-1.977,"benchmark_drawdown_pct":-1.5},{"date":"2025-06-26","portfolio_equity":16023.06,"benchmark_equity":13829.94,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2025-07-01","portfolio_equity":15816.72,"benchmark_equity":13960.59,"portfolio_drawdown_pct":-1.509,"benchmark_drawdown_pct":-0.032},{"date":"2025-07-07","portfolio_equity":15825.86,"benchmark_equity":14029.07,"portfolio_drawdown_pct":-1.747,"benchmark_drawdown_pct":-0.745},{"date":"2025-07-10","portfolio_equity":16193.41,"benchmark_equity":14145.25,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2025-07-15","portfolio_equity":16438.14,"benchmark_equity":14062.07,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":-0.588},{"date":"2025-07-18","portfolio_equity":16686.74,"benchmark_equity":14185.03,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":-0.073},{"date":"2025-07-23","portfolio_equity":16822.06,"benchmark_equity":14334.89,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2025-07-28","portfolio_equity":17070.04,"benchmark_equity":14396.59,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":-0.025},{"date":"2025-07-31","portfolio_equity":17033.78,"benchmark_equity":14286.75,"portfolio_drawdown_pct":-0.596,"benchmark_drawdown_pct":-0.788},{"date":"2025-08-05","portfolio_equity":17070.0,"benchmark_equity":14193.85,"portfolio_drawdown_pct":-0.541,"benchmark_drawdown_pct":-1.433},{"date":"2025-08-08","portfolio_equity":17537.31,"benchmark_equity":14402.02,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2025-08-13","portfolio_equity":17774.61,"benchmark_equity":14576.29,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2025-08-18","portfolio_equity":17566.24,"benchmark_equity":14540.35,"portfolio_drawdown_pct":-1.172,"benchmark_drawdown_pct":-0.256},{"date":"2025-08-21","portfolio_equity":17064.75,"benchmark_equity":14365.18,"portfolio_drawdown_pct":-3.994,"benchmark_drawdown_pct":-1.457},{"date":"2025-08-26","portfolio_equity":17548.94,"benchmark_equity":14582.39,"portfolio_drawdown_pct":-1.27,"benchmark_drawdown_pct":-0.023},{"date":"2025-08-29","portfolio_equity":17431.94,"benchmark_equity":14579.9,"portfolio_drawdown_pct":-1.928,"benchmark_drawdown_pct":-0.596},{"date":"2025-09-04","portfolio_equity":17796.79,"benchmark_equity":14671.9,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2025-09-09","portfolio_equity":17842.84,"benchmark_equity":14699.25,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2025-09-12","portfolio_equity":18363.04,"benchmark_equity":14859.27,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":-0.033},{"date":"2025-09-17","portfolio_equity":18626.83,"benchmark_equity":14899.28,"portfolio_drawdown_pct":-0.421,"benchmark_drawdown_pct":-0.262},{"date":"2025-09-22","portfolio_equity":19097.32,"benchmark_equity":15114.2,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2025-09-25","portfolio_equity":18880.26,"benchmark_equity":14914.97,"portfolio_drawdown_pct":-1.137,"benchmark_drawdown_pct":-1.318},{"date":"2025-09-30","portfolio_equity":19206.12,"benchmark_equity":15099.24,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":-0.099},{"date":"2025-10-03","portfolio_equity":19256.54,"benchmark_equity":15167.92,"portfolio_drawdown_pct":-0.59,"benchmark_drawdown_pct":-0.001},{"date":"2025-10-08","portfolio_equity":20498.9,"benchmark_equity":15256.32,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2025-10-13","portfolio_equity":20111.59,"benchmark_equity":15028.07,"portfolio_drawdown_pct":-1.889,"benchmark_drawdown_pct":-1.496},{"date":"2025-10-16","portfolio_equity":20462.06,"benchmark_equity":14973.68,"portfolio_drawdown_pct":-0.18,"benchmark_drawdown_pct":-1.853},{"date":"2025-10-21","portfolio_equity":20630.62,"benchmark_equity":15215.06,"portfolio_drawdown_pct":-1.417,"benchmark_drawdown_pct":-0.27},{"date":"2025-10-24","portfolio_equity":20978.33,"benchmark_equity":15350.15,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2025-10-29","portfolio_equity":21749.43,"benchmark_equity":15579.98,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2025-11-03","portfolio_equity":21696.92,"benchmark_equity":15488.18,"portfolio_drawdown_pct":-0.241,"benchmark_drawdown_pct":-0.589},{"date":"2025-11-06","portfolio_equity":20914.88,"benchmark_equity":15192.85,"portfolio_drawdown_pct":-3.837,"benchmark_drawdown_pct":-2.485},{"date":"2025-11-11","portfolio_equity":21214.88,"benchmark_equity":15480.48,"portfolio_drawdown_pct":-2.458,"benchmark_drawdown_pct":-0.639},{"date":"2025-11-14","portfolio_equity":20900.96,"benchmark_equity":15229.57,"portfolio_drawdown_pct":-3.901,"benchmark_drawdown_pct":-2.249},{"date":"2025-11-19","portfolio_equity":20519.16,"benchmark_equity":15018.78,"portfolio_drawdown_pct":-5.657,"benchmark_drawdown_pct":-3.602},{"date":"2025-11-24","portfolio_equity":20749.61,"benchmark_equity":15157.04,"portfolio_drawdown_pct":-4.597,"benchmark_drawdown_pct":-2.715},{"date":"2025-11-28","portfolio_equity":20966.25,"benchmark_equity":15489.32,"portfolio_drawdown_pct":-3.601,"benchmark_drawdown_pct":-0.582},{"date":"2025-12-03","portfolio_equity":21039.08,"benchmark_equity":15500.65,"portfolio_drawdown_pct":-3.266,"benchmark_drawdown_pct":-0.509},{"date":"2025-12-08","portfolio_equity":21033.73,"benchmark_equity":15494.76,"portfolio_drawdown_pct":-3.291,"benchmark_drawdown_pct":-0.547},{"date":"2025-12-11","portfolio_equity":21033.23,"benchmark_equity":15620.32,"portfolio_drawdown_pct":-3.293,"benchmark_drawdown_pct":0.0},{"date":"2025-12-16","portfolio_equity":20928.5,"benchmark_equity":15386.87,"portfolio_drawdown_pct":-3.775,"benchmark_drawdown_pct":-1.495},{"date":"2025-12-19","portfolio_equity":21049.58,"benchmark_equity":15471.44,"portfolio_drawdown_pct":-3.218,"benchmark_drawdown_pct":-0.953},{"date":"2025-12-24","portfolio_equity":21374.02,"benchmark_equity":15693.99,"portfolio_drawdown_pct":-1.726,"benchmark_drawdown_pct":0.0},{"date":"2025-12-30","portfolio_equity":21093.05,"benchmark_equity":15617.38,"portfolio_drawdown_pct":-3.018,"benchmark_drawdown_pct":-0.488},{"date":"2026-01-05","portfolio_equity":21099.46,"benchmark_equity":15633.52,"portfolio_drawdown_pct":-2.988,"benchmark_drawdown_pct":-0.385},{"date":"2026-01-08","portfolio_equity":20801.58,"benchmark_equity":15674.21,"portfolio_drawdown_pct":-4.358,"benchmark_drawdown_pct":-0.332},{"date":"2026-01-13","portfolio_equity":21226.52,"benchmark_equity":15771.05,"portfolio_drawdown_pct":-2.404,"benchmark_drawdown_pct":-0.2},{"date":"2026-01-16","portfolio_equity":21144.18,"benchmark_equity":15723.08,"portfolio_drawdown_pct":-2.783,"benchmark_drawdown_pct":-0.503},{"date":"2026-01-22","portfolio_equity":21548.12,"benchmark_equity":15662.16,"portfolio_drawdown_pct":-0.926,"benchmark_drawdown_pct":-0.889},{"date":"2026-01-27","portfolio_equity":21924.2,"benchmark_equity":15810.15,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2026-01-30","portfolio_equity":21312.79,"benchmark_equity":15730.13,"portfolio_drawdown_pct":-3.539,"benchmark_drawdown_pct":-0.506},{"date":"2026-02-04","portfolio_equity":20572.59,"benchmark_equity":15598.74,"portfolio_drawdown_pct":-6.889,"benchmark_drawdown_pct":-1.337},{"date":"2026-02-09","portfolio_equity":21078.8,"benchmark_equity":15775.14,"portfolio_drawdown_pct":-4.598,"benchmark_drawdown_pct":-0.221},{"date":"2026-02-12","portfolio_equity":20542.57,"benchmark_equity":15486.89,"portfolio_drawdown_pct":-7.025,"benchmark_drawdown_pct":-2.045},{"date":"2026-02-18","portfolio_equity":20472.75,"benchmark_equity":15601.01,"portfolio_drawdown_pct":-7.341,"benchmark_drawdown_pct":-1.323},{"date":"2026-02-23","portfolio_equity":20580.05,"benchmark_equity":15512.35,"portfolio_drawdown_pct":-6.855,"benchmark_drawdown_pct":-1.884},{"date":"2026-02-26","portfolio_equity":20739.53,"benchmark_equity":15669.43,"portfolio_drawdown_pct":-6.133,"benchmark_drawdown_pct":-0.89},{"date":"2026-03-03","portfolio_equity":20234.98,"benchmark_equity":15465.53,"portfolio_drawdown_pct":-8.417,"benchmark_drawdown_pct":-2.18},{"date":"2026-03-06","portfolio_equity":20177.22,"benchmark_equity":15284.8,"portfolio_drawdown_pct":-8.678,"benchmark_drawdown_pct":-3.323},{"date":"2026-03-11","portfolio_equity":20584.33,"benchmark_equity":15374.6,"portfolio_drawdown_pct":-6.836,"benchmark_drawdown_pct":-2.755},{"date":"2026-03-16","portfolio_equity":20139.91,"benchmark_equity":15208.65,"portfolio_drawdown_pct":-8.847,"benchmark_drawdown_pct":-3.805},{"date":"2026-03-19","portfolio_equity":19791.95,"benchmark_equity":14998.83,"portfolio_drawdown_pct":-10.422,"benchmark_drawdown_pct":-5.132},{"date":"2026-03-24","portfolio_equity":19367.37,"benchmark_equity":14888.89,"portfolio_drawdown_pct":-12.343,"benchmark_drawdown_pct":-5.827},{"date":"2026-03-27","portfolio_equity":18904.27,"benchmark_equity":14453.74,"portfolio_drawdown_pct":-14.439,"benchmark_drawdown_pct":-8.579},{"date":"2026-04-01","portfolio_equity":19740.46,"benchmark_equity":14935.85,"portfolio_drawdown_pct":-10.655,"benchmark_drawdown_pct":-5.53},{"date":"2026-04-07","portfolio_equity":19725.9,"benchmark_equity":15026.57,"portfolio_drawdown_pct":-10.721,"benchmark_drawdown_pct":-4.956},{"date":"2026-04-10","portfolio_equity":20351.46,"benchmark_equity":15487.93,"portfolio_drawdown_pct":-7.889,"benchmark_drawdown_pct":-2.038},{"date":"2026-04-15","portfolio_equity":21449.84,"benchmark_equity":15954.76,"portfolio_drawdown_pct":-2.918,"benchmark_drawdown_pct":0.0},{"date":"2026-04-20","portfolio_equity":21825.26,"benchmark_equity":16154.89,"portfolio_drawdown_pct":-1.219,"benchmark_drawdown_pct":-0.2},{"date":"2026-04-23","portfolio_equity":21956.05,"benchmark_equity":16148.74,"portfolio_drawdown_pct":-1.129,"benchmark_drawdown_pct":-0.388},{"date":"2026-04-28","portfolio_equity":22471.24,"benchmark_equity":16222.59,"portfolio_drawdown_pct":-1.007,"benchmark_drawdown_pct":-0.487},{"date":"2026-05-01","portfolio_equity":23100.09,"benchmark_equity":16426.83,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2026-05-06","portfolio_equity":24238.51,"benchmark_equity":16727.26,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2026-05-11","portfolio_equity":25119.87,"benchmark_equity":16851.95,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2026-05-14","portfolio_equity":25304.06,"benchmark_equity":17054.14,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2026-05-19","portfolio_equity":24215.1,"benchmark_equity":16724.99,"portfolio_drawdown_pct":-4.304,"benchmark_drawdown_pct":-1.93},{"date":"2026-05-22","portfolio_equity":25051.65,"benchmark_equity":16996.47,"portfolio_drawdown_pct":-0.998,"benchmark_drawdown_pct":-0.338},{"date":"2026-05-28","portfolio_equity":25921.37,"benchmark_equity":17200.71,"portfolio_drawdown_pct":0.0,"benchmark_drawdown_pct":0.0},{"date":"2026-06-02","portfolio_equity":25845.32,"benchmark_equity":17314.0,"portfolio_drawdown_pct":-0.293,"benchmark_drawdown_pct":0.0},{"date":"2026-06-05","portfolio_equity":24442.2,"benchmark_equity":16812.06,"portfolio_drawdown_pct":-5.706,"benchmark_drawdown_pct":-2.899},{"date":"2026-06-10","portfolio_equity":23641.92,"benchmark_equity":16535.79,"portfolio_drawdown_pct":-8.794,"benchmark_drawdown_pct":-4.495},{"date":"2026-06-15","portfolio_equity":25456.08,"benchmark_equity":17205.95,"portfolio_drawdown_pct":-1.795,"benchmark_drawdown_pct":-0.624},{"date":"2026-06-18","portfolio_equity":25089.74,"benchmark_equity":17065.39,"portfolio_drawdown_pct":-3.208,"benchmark_drawdown_pct":-1.436},{"date":"2026-06-24","portfolio_equity":24119.69,"benchmark_equity":16756.87,"portfolio_drawdown_pct":-6.951,"benchmark_drawdown_pct":-3.218},{"date":"2026-06-29","portfolio_equity":24536.27,"benchmark_equity":16934.22,"portfolio_drawdown_pct":-5.343,"benchmark_drawdown_pct":-2.193},{"date":"2026-07-02","portfolio_equity":25075.94,"benchmark_equity":17020.6,"portfolio_drawdown_pct":-3.262,"benchmark_drawdown_pct":-1.695},{"date":"2026-07-08","portfolio_equity":25160.36,"benchmark_equity":17034.77,"portfolio_drawdown_pct":-2.936,"benchmark_drawdown_pct":-1.613},{"date":"2026-07-13","portfolio_equity":25195.95,"benchmark_equity":17120.93,"portfolio_drawdown_pct":-2.799,"benchmark_drawdown_pct":-1.115},{"date":"2026-07-16","portfolio_equity":25314.5,"benchmark_equity":17156.35,"portfolio_drawdown_pct":-2.341,"benchmark_drawdown_pct":-0.911},{"date":"2026-07-21","portfolio_equity":25369.17,"benchmark_equity":17100.59,"portfolio_drawdown_pct":-2.13,"benchmark_drawdown_pct":-1.233}];
+const CORRELATION = [{"ticker_a":"NVDA","ticker_b":"NVDA","correlation":1.0},{"ticker_a":"NVDA","ticker_b":"AAPL","correlation":0.3345},{"ticker_a":"NVDA","ticker_b":"MSFT","correlation":0.464},{"ticker_a":"NVDA","ticker_b":"TSLA","correlation":0.3772},{"ticker_a":"NVDA","ticker_b":"AMD","correlation":0.5502},{"ticker_a":"NVDA","ticker_b":"GOOGL","correlation":0.3915},{"ticker_a":"NVDA","ticker_b":"GLD","correlation":0.0938},{"ticker_a":"NVDA","ticker_b":"TLT","correlation":0.0005},{"ticker_a":"AAPL","ticker_b":"NVDA","correlation":0.3345},{"ticker_a":"AAPL","ticker_b":"AAPL","correlation":1.0},{"ticker_a":"AAPL","ticker_b":"MSFT","correlation":0.4093},{"ticker_a":"AAPL","ticker_b":"TSLA","correlation":0.3996},{"ticker_a":"AAPL","ticker_b":"AMD","correlation":0.3159},{"ticker_a":"AAPL","ticker_b":"GOOGL","correlation":0.396},{"ticker_a":"AAPL","ticker_b":"GLD","correlation":0.0568},{"ticker_a":"AAPL","ticker_b":"TLT","correlation":0.1024},{"ticker_a":"MSFT","ticker_b":"NVDA","correlation":0.464},{"ticker_a":"MSFT","ticker_b":"AAPL","correlation":0.4093},{"ticker_a":"MSFT","ticker_b":"MSFT","correlation":1.0},{"ticker_a":"MSFT","ticker_b":"TSLA","correlation":0.3239},{"ticker_a":"MSFT","ticker_b":"AMD","correlation":0.3188},{"ticker_a":"MSFT","ticker_b":"GOOGL","correlation":0.361},{"ticker_a":"MSFT","ticker_b":"GLD","correlation":0.0564},{"ticker_a":"MSFT","ticker_b":"TLT","correlation":-0.0077},{"ticker_a":"TSLA","ticker_b":"NVDA","correlation":0.3772},{"ticker_a":"TSLA","ticker_b":"AAPL","correlation":0.3996},{"ticker_a":"TSLA","ticker_b":"MSFT","correlation":0.3239},{"ticker_a":"TSLA","ticker_b":"TSLA","correlation":1.0},{"ticker_a":"TSLA","ticker_b":"AMD","correlation":0.391},{"ticker_a":"TSLA","ticker_b":"GOOGL","correlation":0.3817},{"ticker_a":"TSLA","ticker_b":"GLD","correlation":0.0799},{"ticker_a":"TSLA","ticker_b":"TLT","correlation":0.0836},{"ticker_a":"AMD","ticker_b":"NVDA","correlation":0.5502},{"ticker_a":"AMD","ticker_b":"AAPL","correlation":0.3159},{"ticker_a":"AMD","ticker_b":"MSFT","correlation":0.3188},{"ticker_a":"AMD","ticker_b":"TSLA","correlation":0.391},{"ticker_a":"AMD","ticker_b":"AMD","correlation":1.0},{"ticker_a":"AMD","ticker_b":"GOOGL","correlation":0.3819},{"ticker_a":"AMD","ticker_b":"GLD","correlation":0.1848},{"ticker_a":"AMD","ticker_b":"TLT","correlation":0.0466},{"ticker_a":"GOOGL","ticker_b":"NVDA","correlation":0.3915},{"ticker_a":"GOOGL","ticker_b":"AAPL","correlation":0.396},{"ticker_a":"GOOGL","ticker_b":"MSFT","correlation":0.361},{"ticker_a":"GOOGL","ticker_b":"TSLA","correlation":0.3817},{"ticker_a":"GOOGL","ticker_b":"AMD","correlation":0.3819},{"ticker_a":"GOOGL","ticker_b":"GOOGL","correlation":1.0},{"ticker_a":"GOOGL","ticker_b":"GLD","correlation":0.1346},{"ticker_a":"GOOGL","ticker_b":"TLT","correlation":0.0559},{"ticker_a":"GLD","ticker_b":"NVDA","correlation":0.0938},{"ticker_a":"GLD","ticker_b":"AAPL","correlation":0.0568},{"ticker_a":"GLD","ticker_b":"MSFT","correlation":0.0564},{"ticker_a":"GLD","ticker_b":"TSLA","correlation":0.0799},{"ticker_a":"GLD","ticker_b":"AMD","correlation":0.1848},{"ticker_a":"GLD","ticker_b":"GOOGL","correlation":0.1346},{"ticker_a":"GLD","ticker_b":"GLD","correlation":1.0},{"ticker_a":"GLD","ticker_b":"TLT","correlation":0.1372},{"ticker_a":"TLT","ticker_b":"NVDA","correlation":0.0005},{"ticker_a":"TLT","ticker_b":"AAPL","correlation":0.1024},{"ticker_a":"TLT","ticker_b":"MSFT","correlation":-0.0077},{"ticker_a":"TLT","ticker_b":"TSLA","correlation":0.0836},{"ticker_a":"TLT","ticker_b":"AMD","correlation":0.0466},{"ticker_a":"TLT","ticker_b":"GOOGL","correlation":0.0559},{"ticker_a":"TLT","ticker_b":"GLD","correlation":0.1372},{"ticker_a":"TLT","ticker_b":"TLT","correlation":1.0}];
+
+// ------------------------------------------------------------- helpers --
+const fmtPct = (v, d = 1) => `${v >= 0 ? "+" : ""}${v.toFixed(d)}%`;
+const fmtNum = (v, d = 2) => v.toFixed(d);
+
+// ------------------------------------------------------------- header --
+document.getElementById("holdingBadges").innerHTML =
+  HOLDINGS.map(t => `<span class="badge">${t}</span>`).join("") + `<span class="badge">Benchmark: SPY</span>`;
+
+// --------------------------------------------------------- hero stats --
+const heroStats = [
+  { label: "Portfolio Return (3y)", value: fmtPct(RISK_COMPARISON.portfolio.return), sub: `SPY: ${fmtPct(RISK_COMPARISON.benchmark.return)}`, up: true },
+  { label: "Sharpe Ratio", value: fmtNum(RISK_COMPARISON.portfolio.sharpe), sub: `SPY: ${fmtNum(RISK_COMPARISON.benchmark.sharpe)}`, up: true },
+  { label: "Diversification Benefit", value: fmtPct(100 * (1 - DIVERSIFICATION.realVol / DIVERSIFICATION.naiveVol)), sub: "vs. naive (perfectly correlated) volatility", up: true },
+  { label: "Max Drawdown", value: fmtPct(RISK_COMPARISON.portfolio.maxdd), sub: `SPY: ${fmtPct(RISK_COMPARISON.benchmark.maxdd)}`, up: false },
+];
+document.getElementById("heroStats").innerHTML = heroStats.map(s => `
+  <div class="stat-tile">
+    <div class="stat-label">${s.label}</div>
+    <div class="stat-value" style="color:${s.up ? "var(--gain)" : "var(--text-primary)"}">${s.value}</div>
+    <div class="stat-sub">${s.sub}</div>
+  </div>
+`).join("");
+
+// --------------------------------------------------------- mini metrics --
+const miniMetricDefs = [
+  { label: "Annualized Return", key: "return", fmt: v => fmtPct(v), max: 40 },
+  { label: "Annualized Volatility", key: "vol", fmt: v => fmtPct(v, 1), max: 30 },
+  { label: "Sharpe Ratio", key: "sharpe", fmt: v => fmtNum(v), max: 1.5 },
+  { label: "Max Drawdown", key: "maxdd", fmt: v => fmtPct(v), max: -30, isNegative: true },
+];
+document.getElementById("miniMetrics").innerHTML = miniMetricDefs.map(m => {
+  const pVal = RISK_COMPARISON.portfolio[m.key];
+  const bVal = RISK_COMPARISON.benchmark[m.key];
+  const scale = v => m.isNegative ? Math.min(100, (Math.abs(v) / Math.abs(m.max)) * 100) : Math.min(100, (v / m.max) * 100);
+  return `
+    <div class="mini-metric">
+      <div class="mini-metric-label">${m.label}</div>
+      <div class="mini-bar-row">
+        <div class="mini-bar-name">Portfolio</div>
+        <div class="mini-bar-track"><div class="mini-bar-fill" style="width:${scale(pVal)}%;background:var(--series-portfolio)"></div></div>
+        <div class="mini-bar-value">${m.fmt(pVal)}</div>
+      </div>
+      <div class="mini-bar-row">
+        <div class="mini-bar-name">SPY</div>
+        <div class="mini-bar-track"><div class="mini-bar-fill" style="width:${scale(bVal)}%;background:var(--series-benchmark)"></div></div>
+        <div class="mini-bar-value">${m.fmt(bVal)}</div>
+      </div>
+    </div>
+  `;
+}).join("");
+
+// ---------------------------------------------------------- allocation --
+document.getElementById("allocList").innerHTML = HOLDINGS_WEIGHTS.map(h => `
+  <div class="alloc-row">
+    <div class="alloc-ticker">${h.ticker}</div>
+    <div class="alloc-track"><div class="alloc-fill" style="width:${h.weight * 4}%"></div></div>
+    <div class="alloc-pct">${h.weight.toFixed(1)}%</div>
+  </div>
+`).join("");
+
+// ------------------------------------------------------------- heatmap --
+function diverge(v) {
+  const neg = [75, 142, 196], mid = [42, 52, 65], pos = [188, 132, 52];
+  const t = v < 0 ? -v / 0.6 : v / 1.0;
+  const from = v < 0 ? mid : mid, to = v < 0 ? neg : pos;
+  const k = Math.min(1, Math.abs(t));
+  const rgb = from.map((c, i) => Math.round(c + (to[i] - c) * k));
+  return `rgb(${rgb.join(",")})`;
+}
+function textColor(v) {
+  return Math.abs(v) > 0.45 ? "#0A0E14" : "#C7D0DC";
+}
+let heatmapHTML = `<div class="heatmap-grid"><div></div>`;
+HOLDINGS.forEach(t => heatmapHTML += `<div class="heatmap-colhead">${t}</div>`);
+HOLDINGS.forEach(rowT => {
+  heatmapHTML += `<div class="heatmap-label">${rowT}</div>`;
+  HOLDINGS.forEach(colT => {
+    const cell = CORRELATION.find(c => c.ticker_a === rowT && c.ticker_b === colT);
+    const v = cell ? cell.correlation : 0;
+    heatmapHTML += `<div class="heatmap-cell" style="background:${diverge(v)};color:${textColor(v)}" title="${rowT} vs ${colT}: ${v.toFixed(2)}">${v.toFixed(2)}</div>`;
+  });
+});
+heatmapHTML += `</div>`;
+document.getElementById("heatmap").innerHTML = heatmapHTML;
+
+// -------------------------------------------------------- Chart.js setup --
+Chart.defaults.color = "#9AA7B8";
+Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
+Chart.defaults.font.size = 11;
+
+new Chart(document.getElementById("equityChart"), {
+  type: "line",
+  data: {
+    labels: EQUITY_CURVE.map(d => d.date),
+    datasets: [
+      {
+        label: "Portfolio",
+        data: EQUITY_CURVE.map(d => d.portfolio_equity),
+        borderColor: "#3987e5", backgroundColor: "rgba(57,135,229,0.08)",
+        borderWidth: 2, pointRadius: 0, fill: true, tension: 0.15,
+      },
+      {
+        label: "SPY",
+        data: EQUITY_CURVE.map(d => d.benchmark_equity),
+        borderColor: "#199e70", backgroundColor: "transparent",
+        borderWidth: 2, pointRadius: 0, tension: 0.15,
+      },
+    ],
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: "#1B2430", borderColor: "rgba(255,255,255,0.1)", borderWidth: 1,
+        titleColor: "#E8EDF2", bodyColor: "#C7D0DC", padding: 10,
+        callbacks: { label: ctx => `${ctx.dataset.label}: $${ctx.parsed.y.toLocaleString(undefined, {maximumFractionDigits:0})}` },
+      },
+    },
+    scales: {
+      x: { ticks: { maxTicksLimit: 8, color: "#5C6B7A" }, grid: { color: "rgba(255,255,255,0.04)" } },
+      y: { ticks: { color: "#5C6B7A", callback: v => `$${(v/1000).toFixed(0)}k` }, grid: { color: "rgba(255,255,255,0.06)" } },
+    },
+  },
+});
+
+const scatterPoints = [];
+HOLDINGS.forEach(t => scatterPoints.push({ x: ASSET_RISK_RETURN[t].vol, y: ASSET_RISK_RETURN[t].return, label: t, color: "#9085e9", r: 6 }));
+scatterPoints.push({ x: RISK_COMPARISON.portfolio.vol, y: RISK_COMPARISON.portfolio.return, label: "Portfolio", color: "#3987e5", r: 9 });
+scatterPoints.push({ x: RISK_COMPARISON.benchmark.vol, y: RISK_COMPARISON.benchmark.return, label: "SPY", color: "#199e70", r: 9 });
+
+new Chart(document.getElementById("scatterChart"), {
+  type: "scatter",
+  data: {
+    datasets: [{
+      data: scatterPoints,
+      backgroundColor: scatterPoints.map(p => p.color),
+      pointRadius: scatterPoints.map(p => p.r),
+      pointHoverRadius: scatterPoints.map(p => p.r + 2),
+    }],
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: "#1B2430", borderColor: "rgba(255,255,255,0.1)", borderWidth: 1,
+        titleColor: "#E8EDF2", bodyColor: "#C7D0DC", padding: 10,
+        callbacks: {
+          label: ctx => {
+            const p = scatterPoints[ctx.dataIndex];
+            return `${p.label}: ${p.y.toFixed(1)}% return, ${p.x.toFixed(1)}% vol`;
+          },
+        },
+      },
+      datalabels: {},
+    },
+    scales: {
+      x: { title: { display: true, text: "Annualized Volatility (%)", color: "#9AA7B8" }, grid: { color: "rgba(255,255,255,0.06)" } },
+      y: { title: { display: true, text: "Annualized Return (%)", color: "#9AA7B8" }, grid: { color: "rgba(255,255,255,0.06)" } },
+    },
+  },
+  plugins: [{
+    id: "pointLabels",
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      const meta = chart.getDatasetMeta(0);
+      ctx.save();
+      ctx.font = "11px -apple-system, sans-serif";
+      ctx.fillStyle = "#C7D0DC";
+      ctx.textAlign = "center";
+      meta.data.forEach((point, i) => {
+        ctx.fillText(scatterPoints[i].label, point.x, point.y - scatterPoints[i].r - 6);
+      });
+      ctx.restore();
+    },
+  }],
+});
+</script>
+</body>
+</html>

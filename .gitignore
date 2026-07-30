@@ -15,3 +15,4 @@ node_modules/
 .notify_log.txt
 .notify_error.txt
 *.xlsx
+*.hyper

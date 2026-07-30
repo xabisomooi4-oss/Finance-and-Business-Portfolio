@@ -1,0 +1,7 @@
+symbol,period,period_order,component,projected_cash_flow,present_value
+BLK,Year 1,1,Dividend,23.5198,21.0233
+BLK,Year 2,2,Dividend,25.2825,20.2001
+BLK,Year 3,3,Dividend,27.1773,19.4092
+BLK,Year 4,4,Dividend,29.2141,18.6492
+BLK,Year 5,5,Dividend,31.4035,17.919
+BLK,Terminal Value,6,Terminal Value,414.7259,236.6442
